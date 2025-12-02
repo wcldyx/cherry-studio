@@ -2,6 +2,7 @@ import KeyvStorage from '@kangfenmao/keyv-storage'
 import { loggerService } from '@logger'
 
 import { startAutoSync } from './services/BackupService'
+import chatTabsPersistenceService from './services/ChatTabsPersistenceService'
 import { startNutstoreAutoSync } from './services/NutstoreService'
 import storeSyncService from './services/StoreSyncService'
 import { webTraceService } from './services/WebTraceService'
@@ -35,7 +36,12 @@ function initWebTrace() {
   webTraceService.init()
 }
 
+function initChatTabsPersistence() {
+  chatTabsPersistenceService.init(store)
+}
+
 initKeyv()
 initAutoSync()
 initStoreSync()
 initWebTrace()
+initChatTabsPersistence()

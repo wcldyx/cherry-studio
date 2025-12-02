@@ -226,6 +226,30 @@ const runtimeSlice = createSlice({
       const index = state.chat.tabs.findIndex((tab) => tab.id === id)
       if (index === -1) return
       state.chat.tabs[index] = { ...state.chat.tabs[index], ...rest }
+    },
+    hydrateChatTabsAction: (state, action: PayloadAction<{ tabs: ChatTab[]; activeTabId: string | null }>) => {
+      const tabs = action.payload.tabs || []
+      state.chat.tabs = tabs
+      const desiredActiveId = action.payload.activeTabId
+      const existing = tabs.find((tab) => tab.id === desiredActiveId)
+      const nextActive = existing?.id || tabs[0]?.id || null
+      state.chat.activeTabId = nextActive
+      const activeTab = tabs.find((tab) => tab.id === nextActive) || null
+      if (!activeTab) {
+        state.chat.activeTopicOrSession = 'topic'
+        state.chat.activeAgentId = null
+        return
+      }
+      if (activeTab.type === 'session') {
+        state.chat.activeTopicOrSession = 'session'
+        state.chat.activeAgentId = activeTab.assistantId
+        if (activeTab.sessionId) {
+          state.chat.activeSessionIdMap[activeTab.assistantId] = activeTab.sessionId
+        }
+      } else {
+        state.chat.activeTopicOrSession = 'topic'
+        state.chat.activeAgentId = null
+      }
     }
   }
 })
@@ -261,7 +285,8 @@ export const {
   closeChatTabAction,
   setActiveChatTabAction,
   reorderChatTabsAction,
-  updateChatTabMetaAction
+  updateChatTabMetaAction,
+  hydrateChatTabsAction
 } = runtimeSlice.actions
 
 export default runtimeSlice.reducer

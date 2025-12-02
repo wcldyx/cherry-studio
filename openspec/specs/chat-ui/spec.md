@@ -18,3 +18,14 @@ TBD - created by archiving change add-chat-tabbed-chat. Update Purpose after arc
 - **WHEN** 某个标签对应的话题被删除/移动或 Session 失效
 - **THEN** 标签栏必须自动移除或更新该标签，防止显示空状态，并保持激活标签指向有效会话
 
+### Requirement: 标签状态持久化
+聊天界面 SHALL 持久化标签集合、顺序、激活标签以及关联会话元数据，使用户重新打开应用时可回到原本的多标签情境。
+
+#### Scenario: 应用重启后恢复标签
+- **WHEN** 用户关闭并重新打开 Cherry Studio
+- **THEN** 系统必须读取上次记录的标签集合，按原顺序创建标签并激活先前聚焦的标签，同时恢复其对应会话内容与输入状态
+
+#### Scenario: 清理失效标签
+- **WHEN** 持久化记录中的话题已被删除或 Session 不再有效
+- **THEN** 系统必须在恢复过程中跳过该标签并在必要时激活下一个可用标签，确保不会呈现空白或无效的会话
+
