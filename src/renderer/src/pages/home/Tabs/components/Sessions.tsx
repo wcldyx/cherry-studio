@@ -1,6 +1,7 @@
 import { DynamicVirtualList } from '@renderer/components/VirtualList'
 import { useCreateDefaultSession } from '@renderer/hooks/agents/useCreateDefaultSession'
 import { useSessions } from '@renderer/hooks/agents/useSessions'
+import { getSessionTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useRuntime } from '@renderer/hooks/useRuntime'
 import { useAppDispatch } from '@renderer/store'
 import { newMessagesActions } from '@renderer/store/newMessage'
@@ -32,6 +33,7 @@ const Sessions: React.FC<SessionsProps> = ({ agentId }) => {
   const { activeSessionIdMap } = chat
   const dispatch = useAppDispatch()
   const { createDefaultSession, creatingSession } = useCreateDefaultSession(agentId)
+  const { closeTab } = useChatTabs()
 
   const setActiveSessionId = useCallback(
     (agentId: string, sessionId: string | null) => {
@@ -57,9 +59,10 @@ const Sessions: React.FC<SessionsProps> = ({ agentId }) => {
           // may clear messages instead of forbidden deletion
         }
       }
+      closeTab(getSessionTabId(agentId, id))
       dispatch(setSessionWaitingAction({ id, value: false }))
     },
-    [agentId, deleteSession, dispatch, sessions, t]
+    [agentId, closeTab, deleteSession, dispatch, sessions, t]
   )
 
   const activeSessionId = activeSessionIdMap[agentId]

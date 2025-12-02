@@ -5,8 +5,10 @@ import { HStack } from '@renderer/components/Layout'
 import MultiSelectActionPopup from '@renderer/components/Popups/MultiSelectionPopup'
 import PromptPopup from '@renderer/components/Popups/PromptPopup'
 import { QuickPanelProvider } from '@renderer/components/QuickPanel'
+import { useActiveSession } from '@renderer/hooks/agents/useActiveSession'
 import { useCreateDefaultSession } from '@renderer/hooks/agents/useCreateDefaultSession'
 import { useAssistant } from '@renderer/hooks/useAssistant'
+import { getSessionTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useChatContext } from '@renderer/hooks/useChatContext'
 import { useRuntime } from '@renderer/hooks/useRuntime'
 import { useNavbarPosition, useSettings } from '@renderer/hooks/useSettings'
@@ -14,6 +16,9 @@ import { useShortcut } from '@renderer/hooks/useShortcuts'
 import { useShowAssistants, useShowTopics } from '@renderer/hooks/useStore'
 import { useTimer } from '@renderer/hooks/useTimer'
 import { EVENT_NAMES, EventEmitter } from '@renderer/services/EventService'
+import { useAppDispatch, useAppSelector } from '@renderer/store'
+import { setActiveAgentId, setActiveSessionIdAction, setActiveTopicOrSessionAction } from '@renderer/store/runtime'
+import type { ChatTab } from '@renderer/types/chat'
 import type { Assistant, Topic } from '@renderer/types'
 import { classNames } from '@renderer/utils'
 import { Alert, Flex } from 'antd'
@@ -26,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
 import ChatNavbar from './ChatNavbar'
+import ChatTabsBar from './ChatTabsBar'
 import AgentSessionInputbar from './Inputbar/AgentSessionInputbar'
 import Inputbar from './Inputbar/Inputbar'
 import AgentSessionMessages from './Messages/AgentSessionMessages'
@@ -56,6 +62,20 @@ const Chat: FC<Props> = (props) => {
   const { apiServer } = useSettings()
   const sessionAgentId = activeTopicOrSession === 'session' ? activeAgentId : null
   const { createDefaultSession } = useCreateDefaultSession(sessionAgentId)
+  const { session: activeSession } = useActiveSession()
+  const { openTopicTab, openSessionTab, tabs, activeTabId, closeTab, updateTabMeta } = useChatTabs()
+  const dispatch = useAppDispatch()
+  const assistants = useAppSelector((state) => state.assistants.assistants)
+  const lastClosedTopicId = React.useRef<string | null>(null)
+  const lastClosedSessionId = React.useRef<string | null>(null)
+
+  const handleTabClose = React.useCallback((tab: ChatTab) => {
+    if (tab.type === 'topic') {
+      lastClosedTopicId.current = tab.topicId ?? null
+    } else if (tab.type === 'session') {
+      lastClosedSessionId.current = tab.sessionId ?? null
+    }
+  }, [])
 
   const mainRef = React.useRef<HTMLDivElement>(null)
   const contentSearchRef = React.useRef<ContentSearchRef>(null)
@@ -160,6 +180,104 @@ const Chat: FC<Props> = (props) => {
   }
 
   const mainHeight = isTopNavbar ? 'calc(100vh - var(--navbar-height) - 6px)' : 'calc(100vh - var(--navbar-height))'
+  React.useEffect(() => {
+    if (!assistant || !props.activeTopic || activeTopicOrSession !== 'topic') return
+    if (lastClosedTopicId.current === props.activeTopic.id) {
+      lastClosedTopicId.current = null
+      return
+    }
+    openTopicTab(assistant, props.activeTopic)
+  }, [assistant, activeTopicOrSession, openTopicTab, props.activeTopic])
+
+  React.useEffect(() => {
+    if (activeTopicOrSession !== 'session' || !activeAgentId || !activeSessionId) return
+    if (lastClosedSessionId.current === activeSessionId) {
+      lastClosedSessionId.current = null
+      return
+    }
+    openSessionTab(activeAgentId, activeSessionId, { title: activeSession?.name || t('agent.session.title') })
+  }, [activeAgentId, activeSession?.name, activeSessionId, activeTopicOrSession, openSessionTab, t])
+
+  React.useEffect(() => {
+    tabs.forEach((tab) => {
+      if (tab.type === 'topic') {
+        const targetAssistant = assistants.find((item) => item.id === tab.assistantId)
+        const targetTopic = targetAssistant?.topics.find((topic) => topic.id === tab.topicId)
+        if (!targetAssistant || !targetTopic) {
+          closeTab(tab.id)
+          return
+        }
+        if (targetTopic.name && targetTopic.name !== tab.title) {
+          updateTabMeta({ id: tab.id, title: targetTopic.name })
+        }
+      }
+    })
+  }, [assistants, closeTab, tabs, updateTabMeta])
+
+  React.useEffect(() => {
+    if (!activeAgentId || !activeSessionId) return
+    updateTabMeta({
+      id: getSessionTabId(activeAgentId, activeSessionId),
+      title: activeSession?.name || t('agent.session.title')
+    })
+  }, [activeAgentId, activeSession?.name, activeSessionId, t, updateTabMeta])
+
+  const lastSyncedTabId = React.useRef<string | null>(null)
+
+  React.useEffect(() => {
+    if (!activeTabId) {
+      lastSyncedTabId.current = null
+      return
+    }
+    if (lastSyncedTabId.current === activeTabId) {
+      return
+    }
+    lastSyncedTabId.current = activeTabId
+    const tab = tabs.find((item) => item.id === activeTabId)
+    if (!tab) return
+    if (tab.type === 'topic') {
+      const targetAssistant = assistants.find((item) => item.id === tab.assistantId)
+      const targetTopic = targetAssistant?.topics.find((topic) => topic.id === tab.topicId)
+      if (!targetAssistant || !targetTopic) {
+        return
+      }
+      if (targetAssistant.id !== props.assistant.id) {
+        props.setActiveAssistant(targetAssistant)
+        return
+      }
+      if (targetTopic.id !== props.activeTopic?.id) {
+        props.setActiveTopic(targetTopic)
+      }
+      if (activeTopicOrSession !== 'topic') {
+        dispatch(setActiveTopicOrSessionAction('topic'))
+        dispatch(setActiveAgentId(null))
+      }
+      return
+    }
+    if (tab.type === 'session') {
+      if (activeTopicOrSession !== 'session') {
+        dispatch(setActiveTopicOrSessionAction('session'))
+      }
+      if (activeAgentId !== tab.assistantId) {
+        dispatch(setActiveAgentId(tab.assistantId))
+      }
+      if (tab.sessionId && activeSessionId !== tab.sessionId) {
+        dispatch(setActiveSessionIdAction({ agentId: tab.assistantId, sessionId: tab.sessionId }))
+      }
+    }
+  }, [
+    activeAgentId,
+    activeSessionId,
+    activeTabId,
+    activeTopicOrSession,
+    assistants,
+    dispatch,
+    props.activeTopic?.id,
+    props.assistant.id,
+    props.setActiveAssistant,
+    props.setActiveTopic,
+    tabs
+  ])
 
   // TODO: more info
   const AgentInvalid = useCallback(() => {
@@ -199,9 +317,11 @@ const Chat: FC<Props> = (props) => {
                 setActiveAssistant={props.setActiveAssistant}
                 position="left"
               />
-              <div
-                className="flex flex-1 flex-col justify-between"
-                style={{ height: `calc(${mainHeight} - var(--navbar-height))` }}>
+              <ChatTabsBar
+                onCreateSession={activeAgentId ? () => createDefaultSession() : undefined}
+                onCloseTab={handleTabClose}
+              />
+              <div className="flex flex-1 flex-col justify-between" style={{ minHeight: 0 }}>
                 {activeTopicOrSession === 'topic' && (
                   <>
                     <Messages

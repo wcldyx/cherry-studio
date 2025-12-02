@@ -1,5 +1,16 @@
 export type Tab = 'assistants' | 'topic' | 'settings'
 
+export type ChatTabType = 'topic' | 'session'
+
+export interface ChatTab {
+  id: string
+  title: string
+  type: ChatTabType
+  assistantId: string
+  topicId?: string
+  sessionId?: string
+}
+
 export type InputBarToolType =
   | 'new_topic'
   | 'attachment'

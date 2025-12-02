@@ -2,6 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 import { AppLogo, UserAvatar } from '@renderer/config/env'
 import type { MinAppType, Topic, WebSearchStatus } from '@renderer/types'
+import type { ChatTab } from '@renderer/types/chat'
 import type { UpdateInfo } from 'builder-util-runtime'
 
 export interface ChatState {
@@ -21,6 +22,10 @@ export interface ChatState {
   newlyRenamedTopics: string[]
   /** is a session waiting for updating/deleting. undefined and false share same semantics.  */
   sessionWaiting: Record<string, boolean>
+  /** opened chat tabs for quick navigation */
+  tabs: ChatTab[]
+  /** currently active chat tab id */
+  activeTabId: string | null
 }
 
 export interface WebSearchState {
@@ -93,7 +98,9 @@ const initialState: RuntimeState = {
     activeSessionIdMap: {},
     renamingTopics: [],
     newlyRenamedTopics: [],
-    sessionWaiting: {}
+    sessionWaiting: {},
+    tabs: [],
+    activeTabId: null
   },
   websearch: {
     activeSearches: {}
@@ -187,6 +194,38 @@ const runtimeSlice = createSlice({
     setSessionWaitingAction: (state, action: PayloadAction<{ id: string; value: boolean }>) => {
       const { id, value } = action.payload
       state.chat.sessionWaiting[id] = value
+    },
+    openChatTabAction: (state, action: PayloadAction<ChatTab>) => {
+      const tab = action.payload
+      const index = state.chat.tabs.findIndex((item) => item.id === tab.id)
+      if (index >= 0) {
+        state.chat.tabs[index] = { ...state.chat.tabs[index], ...tab }
+      } else {
+        state.chat.tabs.push(tab)
+      }
+      state.chat.activeTabId = tab.id
+    },
+    closeChatTabAction: (state, action: PayloadAction<string>) => {
+      const tabId = action.payload
+      const index = state.chat.tabs.findIndex((item) => item.id === tabId)
+      if (index === -1) return
+      state.chat.tabs.splice(index, 1)
+      if (state.chat.activeTabId === tabId) {
+        const fallback = state.chat.tabs[index] || state.chat.tabs[index - 1] || null
+        state.chat.activeTabId = fallback ? fallback.id : null
+      }
+    },
+    setActiveChatTabAction: (state, action: PayloadAction<string | null>) => {
+      state.chat.activeTabId = action.payload
+    },
+    reorderChatTabsAction: (state, action: PayloadAction<ChatTab[]>) => {
+      state.chat.tabs = action.payload
+    },
+    updateChatTabMetaAction: (state, action: PayloadAction<{ id: string } & Partial<ChatTab>>) => {
+      const { id, ...rest } = action.payload
+      const index = state.chat.tabs.findIndex((tab) => tab.id === id)
+      if (index === -1) return
+      state.chat.tabs[index] = { ...state.chat.tabs[index], ...rest }
     }
   }
 })
@@ -217,7 +256,12 @@ export const {
   setSessionWaitingAction,
   // WebSearch related actions
   setActiveSearches,
-  setWebSearchStatus
+  setWebSearchStatus,
+  openChatTabAction,
+  closeChatTabAction,
+  setActiveChatTabAction,
+  reorderChatTabsAction,
+  updateChatTabMetaAction
 } = runtimeSlice.actions
 
 export default runtimeSlice.reducer

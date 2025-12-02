@@ -5,6 +5,7 @@ import PromptPopup from '@renderer/components/Popups/PromptPopup'
 import SaveToKnowledgePopup from '@renderer/components/Popups/SaveToKnowledgePopup'
 import { isMac } from '@renderer/config/constant'
 import { useAssistant, useAssistants } from '@renderer/hooks/useAssistant'
+import { getTopicTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useInPlaceEdit } from '@renderer/hooks/useInPlaceEdit'
 import { useNotesSettings } from '@renderer/hooks/useNotesSettings'
 import { modelGenerating } from '@renderer/hooks/useRuntime'
@@ -97,6 +98,7 @@ export const Topics: React.FC<Props> = ({ assistant: _assistant, activeTopic, se
   const isPending = useCallback((topicId: string) => topicLoadingQuery[topicId], [topicLoadingQuery])
   const isFulfilled = useCallback((topicId: string) => topicFulfilledQuery[topicId], [topicFulfilledQuery])
   const dispatch = useDispatch()
+  const { closeTab } = useChatTabs()
 
   useEffect(() => {
     dispatch(newMessagesActions.setTopicFulfilled({ topicId: activeTopic.id, fulfilled: false }))
@@ -146,9 +148,10 @@ export const Topics: React.FC<Props> = ({ assistant: _assistant, activeTopic, se
         setActiveTopic(assistant.topics[index + 1 === assistant.topics.length ? index - 1 : index + 1])
       }
       removeTopic(topic)
+      closeTab(getTopicTabId(topic.id))
       setDeletingTopicId(null)
     },
-    [activeTopic.id, assistant.topics, onClearMessages, removeTopic, setActiveTopic]
+    [activeTopic.id, assistant.topics, closeTab, onClearMessages, removeTopic, setActiveTopic]
   )
 
   const onPinTopic = useCallback(
@@ -167,8 +170,9 @@ export const Topics: React.FC<Props> = ({ assistant: _assistant, activeTopic, se
         setActiveTopic(assistant.topics[index + 1 === assistant.topics.length ? index - 1 : index + 1])
       }
       removeTopic(topic)
+      closeTab(getTopicTabId(topic.id))
     },
-    [assistant.topics, removeTopic, setActiveTopic, activeTopic]
+    [assistant.topics, closeTab, removeTopic, setActiveTopic, activeTopic]
   )
 
   const onMoveTopic = useCallback(

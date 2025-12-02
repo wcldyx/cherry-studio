@@ -110,6 +110,7 @@ const HorizontalScrollContainer: React.FC<HorizontalScrollContainerProps> = ({
         $gap={gap}
         $isExpanded={isExpanded}
         $expandable={expandable}
+        $allowVisibleOverflow
         className={cn(classNames?.content)}>
         {children}
       </ScrollContent>
@@ -146,6 +147,7 @@ const ScrollContent = styled(Scrollbar)<{
   $gap: string
   $isExpanded?: boolean
   $expandable?: boolean
+  $allowVisibleOverflow?: boolean
 }>`
   display: flex;
   overflow-x: ${(props) => (props.$expandable && props.$isExpanded ? 'hidden' : 'auto')};
@@ -153,6 +155,7 @@ const ScrollContent = styled(Scrollbar)<{
   white-space: ${(props) => (props.$expandable && props.$isExpanded ? 'normal' : 'nowrap')};
   gap: ${(props) => props.$gap};
   flex-wrap: ${(props) => (props.$expandable && props.$isExpanded ? 'wrap' : 'nowrap')};
+  ${(props) => props.$allowVisibleOverflow && 'overflow: visible;'}
 
   &::-webkit-scrollbar {
     display: none;
