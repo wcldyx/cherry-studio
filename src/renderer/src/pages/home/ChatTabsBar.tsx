@@ -1,17 +1,16 @@
+import { Sortable, useDndReorder } from '@renderer/components/dnd'
+import HorizontalScrollContainer from '@renderer/components/HorizontalScrollContainer'
+import { useAssistants } from '@renderer/hooks/useAssistant'
+import { useChatTabs } from '@renderer/hooks/useChatTabs'
+import { useRuntime } from '@renderer/hooks/useRuntime'
+import { EVENT_NAMES, EventEmitter } from '@renderer/services/EventService'
+import type { ChatTab } from '@renderer/types/chat'
+import { classNames } from '@renderer/utils'
 import { Plus, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css } from 'styled-components'
-
-import HorizontalScrollContainer from '@renderer/components/HorizontalScrollContainer'
-import { Sortable, useDndReorder } from '@renderer/components/dnd'
-import { useAssistants } from '@renderer/hooks/useAssistant'
-import { useChatTabs } from '@renderer/hooks/useChatTabs'
-import { useRuntime } from '@renderer/hooks/useRuntime'
-import { EventEmitter, EVENT_NAMES } from '@renderer/services/EventService'
-import type { ChatTab } from '@renderer/types/chat'
-import { classNames } from '@renderer/utils'
 
 interface ChatTabsBarProps {
   onCreateSession?: () => void

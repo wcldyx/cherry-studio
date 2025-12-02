@@ -1,15 +1,14 @@
+import type { RootState } from '@renderer/store'
+import { hydrateChatTabsAction } from '@renderer/store/runtime'
+import type { ChatTab } from '@renderer/types/chat'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { RootState } from '@renderer/store'
-import type { ChatTab } from '@renderer/types/chat'
-
 import {
+  buildPersistedChatTabsState,
   CHAT_TABS_STORAGE_KEY,
   ChatTabsPersistenceService,
-  buildPersistedChatTabsState,
   normalizePersistedChatTabs
 } from '../ChatTabsPersistenceService'
-import { hydrateChatTabsAction } from '@renderer/store/runtime'
 
 const createMockState = (chatOverride?: Partial<RootState['runtime']['chat']>): RootState => {
   return {

@@ -1,7 +1,3 @@
-import { useCallback } from 'react'
-
-import type { Assistant, Topic } from '@renderer/types'
-import type { ChatTab } from '@renderer/types/chat'
 import { useAppDispatch, useAppSelector } from '@renderer/store'
 import {
   closeChatTabAction,
@@ -10,6 +6,9 @@ import {
   setActiveChatTabAction,
   updateChatTabMetaAction
 } from '@renderer/store/runtime'
+import type { Assistant, Topic } from '@renderer/types'
+import type { ChatTab } from '@renderer/types/chat'
+import { useCallback } from 'react'
 
 export const getTopicTabId = (topicId: string) => `topic:${topicId}`
 export const getSessionTabId = (agentId: string, sessionId: string) => `session:${agentId}:${sessionId}`
@@ -39,11 +38,7 @@ export const useChatTabs = () => {
   )
 
   const openSessionTab = useCallback(
-    (
-      assistantId: string,
-      sessionId: string,
-      options: { title?: string; activate?: boolean } = {}
-    ) => {
+    (assistantId: string, sessionId: string, options: { title?: string; activate?: boolean } = {}) => {
       const prevActive = activeTabId
       dispatch(
         openChatTabAction({

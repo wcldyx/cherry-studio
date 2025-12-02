@@ -8,8 +8,8 @@ import { QuickPanelProvider } from '@renderer/components/QuickPanel'
 import { useActiveSession } from '@renderer/hooks/agents/useActiveSession'
 import { useCreateDefaultSession } from '@renderer/hooks/agents/useCreateDefaultSession'
 import { useAssistant } from '@renderer/hooks/useAssistant'
-import { getSessionTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useChatContext } from '@renderer/hooks/useChatContext'
+import { getSessionTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useRuntime } from '@renderer/hooks/useRuntime'
 import { useNavbarPosition, useSettings } from '@renderer/hooks/useSettings'
 import { useShortcut } from '@renderer/hooks/useShortcuts'
@@ -18,8 +18,8 @@ import { useTimer } from '@renderer/hooks/useTimer'
 import { EVENT_NAMES, EventEmitter } from '@renderer/services/EventService'
 import { useAppDispatch, useAppSelector } from '@renderer/store'
 import { setActiveAgentId, setActiveSessionIdAction, setActiveTopicOrSessionAction } from '@renderer/store/runtime'
-import type { ChatTab } from '@renderer/types/chat'
 import type { Assistant, Topic } from '@renderer/types'
+import type { ChatTab } from '@renderer/types/chat'
 import { classNames } from '@renderer/utils'
 import { Alert, Flex } from 'antd'
 import { debounce } from 'lodash'
@@ -49,6 +49,12 @@ interface Props {
 }
 
 const Chat: FC<Props> = (props) => {
+  const {
+    assistant: propAssistant,
+    activeTopic: propActiveTopic,
+    setActiveAssistant: setActiveAssistantProp,
+    setActiveTopic: setActiveTopicProp
+  } = props
   const { assistant, updateTopic } = useAssistant(props.assistant.id)
   const { t } = useTranslation()
   const { topicPosition, messageStyle, messageNavigation } = useSettings()
@@ -241,12 +247,12 @@ const Chat: FC<Props> = (props) => {
       if (!targetAssistant || !targetTopic) {
         return
       }
-      if (targetAssistant.id !== props.assistant.id) {
-        props.setActiveAssistant(targetAssistant)
+      if (targetAssistant.id !== propAssistant.id) {
+        setActiveAssistantProp(targetAssistant)
         return
       }
-      if (targetTopic.id !== props.activeTopic?.id) {
-        props.setActiveTopic(targetTopic)
+      if (targetTopic.id !== propActiveTopic?.id) {
+        setActiveTopicProp(targetTopic)
       }
       if (activeTopicOrSession !== 'topic') {
         dispatch(setActiveTopicOrSessionAction('topic'))
@@ -272,10 +278,10 @@ const Chat: FC<Props> = (props) => {
     activeTopicOrSession,
     assistants,
     dispatch,
-    props.activeTopic?.id,
-    props.assistant.id,
-    props.setActiveAssistant,
-    props.setActiveTopic,
+    propActiveTopic?.id,
+    propAssistant.id,
+    setActiveAssistantProp,
+    setActiveTopicProp,
     tabs
   ])
 

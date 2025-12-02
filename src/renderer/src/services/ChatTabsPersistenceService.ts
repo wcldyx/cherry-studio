@@ -1,7 +1,7 @@
 import { loggerService } from '@logger'
 import type { Store } from '@reduxjs/toolkit'
-import { hydrateChatTabsAction } from '@renderer/store/runtime'
 import type { RootState } from '@renderer/store'
+import { hydrateChatTabsAction } from '@renderer/store/runtime'
 import type { ChatTab } from '@renderer/types/chat'
 
 const logger = loggerService.withContext('ChatTabsPersistenceService')
@@ -64,7 +64,7 @@ export const normalizePersistedChatTabs = (raw: unknown): NormalizedPersistedCha
   const activeInList =
     typeof candidate.activeTabId === 'string' && tabs.some((tab) => tab.id === candidate.activeTabId)
       ? candidate.activeTabId
-      : tabs[0]?.id ?? null
+      : (tabs[0]?.id ?? null)
 
   return {
     tabs,
@@ -72,10 +72,7 @@ export const normalizePersistedChatTabs = (raw: unknown): NormalizedPersistedCha
   }
 }
 
-export const buildPersistedChatTabsState = (
-  tabs: ChatTab[],
-  activeTabId: string | null
-): PersistedChatTabsState => ({
+export const buildPersistedChatTabsState = (tabs: ChatTab[], activeTabId: string | null): PersistedChatTabsState => ({
   version: CHAT_TABS_STORAGE_VERSION,
   tabs,
   activeTabId
