@@ -158,7 +158,6 @@ const TabButton = styled.button<{ active?: boolean }>`
   white-space: nowrap;
   position: relative;
   z-index: 1;
-  margin-bottom: -1px;
   .close-button {
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -178,18 +177,7 @@ const TabButton = styled.button<{ active?: boolean }>`
       border-color: var(--color-border);
       color: var(--color-text);
       z-index: 2;
-      transform: translateY(1px);
-      border-bottom: 1px solid var(--color-background);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-      &::after {
-        content: '';
-        position: absolute;
-        left: -1px;
-        right: -1px;
-        bottom: -1px;
-        height: 1px;
-        background: var(--color-background);
-      }
     `}
 `
 

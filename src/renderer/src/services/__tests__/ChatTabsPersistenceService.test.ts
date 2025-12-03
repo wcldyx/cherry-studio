@@ -1,7 +1,7 @@
 import type { RootState } from '@renderer/store'
 import { hydrateChatTabsAction } from '@renderer/store/runtime'
 import type { ChatTab } from '@renderer/types/chat'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   buildPersistedChatTabsState,
@@ -113,7 +113,13 @@ describe('ChatTabsPersistenceService helpers', () => {
 
 describe('ChatTabsPersistenceService', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     window.localStorage.clear()
+  })
+
+  afterEach(() => {
+    vi.runOnlyPendingTimers()
+    vi.useRealTimers()
   })
 
   it('hydrates state from storage when available', () => {
@@ -147,6 +153,7 @@ describe('ChatTabsPersistenceService', () => {
     state.runtime.chat.tabs = [buildTab({ id: 'topic:99', topicId: 'topic-99', title: 'Restored' })]
     state.runtime.chat.activeTabId = 'topic:99'
     store.notify()
+    vi.advanceTimersByTime(100)
 
     const savedRaw = window.localStorage.getItem(CHAT_TABS_STORAGE_KEY)
     expect(savedRaw).toBeTruthy()

@@ -82,6 +82,8 @@ export class ChatTabsPersistenceService {
   private initialized = false
   private unsubscribe: (() => void) | null = null
   private lastSerialized = ''
+  private persistTimer: number | null = null
+  private pendingSerialized: string | null = null
 
   init(store: Store<RootState>) {
     if (this.initialized) return
@@ -107,8 +109,13 @@ export class ChatTabsPersistenceService {
       this.unsubscribe()
       this.unsubscribe = null
     }
+    if (typeof window !== 'undefined' && this.persistTimer !== null) {
+      window.clearTimeout(this.persistTimer)
+    }
     this.initialized = false
     this.lastSerialized = ''
+    this.pendingSerialized = null
+    this.persistTimer = null
   }
 
   private hydrate(store: Store<RootState>) {
@@ -155,8 +162,24 @@ export class ChatTabsPersistenceService {
     if (serialized === this.lastSerialized) {
       return
     }
-    this.lastSerialized = serialized
-    window.localStorage.setItem(CHAT_TABS_STORAGE_KEY, serialized)
+    this.pendingSerialized = serialized
+    if (this.persistTimer !== null) {
+      return
+    }
+    this.persistTimer = window.setTimeout(() => {
+      this.persistTimer = null
+      if (!this.pendingSerialized) {
+        return
+      }
+      try {
+        window.localStorage.setItem(CHAT_TABS_STORAGE_KEY, this.pendingSerialized)
+        this.lastSerialized = this.pendingSerialized
+      } catch (error) {
+        logger.error('Failed to write chat tabs state', error as Error)
+      } finally {
+        this.pendingSerialized = null
+      }
+    }, 64)
   }
 }
 
