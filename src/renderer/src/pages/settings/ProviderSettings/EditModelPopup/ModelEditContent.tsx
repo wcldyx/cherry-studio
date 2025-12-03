@@ -25,7 +25,7 @@ import { isNewApiProvider } from '@renderer/utils/provider'
 import type { ModalProps } from 'antd'
 import { Button, Divider, Flex, Form, Input, InputNumber, message, Modal, Select, Switch, Tooltip } from 'antd'
 import { cloneDeep } from 'lodash'
-import { ChevronDown, ChevronUp, PlusIcon, RotateCcw, SaveIcon } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardCopy, ClipboardPaste, PlusIcon, RotateCcw, SaveIcon } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -252,6 +252,40 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
     handleCustomParametersChange([...customParameters, { name: '', value: '', type: 'string' }])
   }, [customParameters, handleCustomParametersChange])
 
+  const handleCopyCustomParameters = useCallback(async () => {
+    if (!navigator?.clipboard?.writeText) {
+      message.error('当前环境无法使用复制功能')
+      return
+    }
+    try {
+      const serialized = JSON.stringify(customParameters ?? [], null, 2)
+      await navigator.clipboard.writeText(serialized)
+      message.success(t('message.copied'))
+    } catch (error) {
+      message.error('复制失败，请稍后再试')
+    }
+  }, [customParameters, t])
+
+  const handlePasteCustomParameters = useCallback(async () => {
+    if (!navigator?.clipboard?.readText) {
+      message.error('当前环境无法读取剪贴板')
+      return
+    }
+    try {
+      const text = (await navigator.clipboard.readText())?.trim()
+      if (!text) {
+        message.warning('剪贴板内容为空')
+        return
+      }
+      const parsed = parseClipboardParameters(text)
+      handleCustomParametersChange(parsed)
+      message.success('已粘贴自定义参数')
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : '粘贴失败，请确认内容格式'
+      message.error(errMsg)
+    }
+  }, [handleCustomParametersChange])
+
   useEffect(() => {
     setCustomParameters(model.customParameters ?? [])
   }, [model])
@@ -337,22 +371,6 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
             </Select>
           </Form.Item>
         )}
-        <Form.Item style={{ marginBottom: 8, textAlign: 'center' }}>
-          <Flex justify="space-between" align="center" style={{ position: 'relative' }}>
-            <Button
-              color="default"
-              variant="filled"
-              icon={showMoreSettings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              iconPosition="end"
-              onClick={() => setShowMoreSettings(!showMoreSettings)}
-              style={{ color: 'var(--color-text-3)' }}>
-              {t('settings.moresetting.label')}
-            </Button>
-            <Button type="primary" htmlType="submit" icon={<SaveIcon size={16} />}>
-              {t('common.save')}
-            </Button>
-          </Flex>
-        </Form.Item>
         {showMoreSettings && (
           <div style={{ marginBottom: 8 }}>
             <Divider style={{ margin: '16px 0 16px 0' }} />
@@ -459,15 +477,39 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
               />
             </Form.Item>
             <Divider style={{ margin: '16px 0' }} />
-            <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
+            <Flex justify="space-between" align="center" style={{ marginBottom: 8, gap: 8 }}>
               <span style={{ fontWeight: 600 }}>{t('models.custom_parameters')}</span>
-              <Button icon={<PlusIcon size={16} />} onClick={handleAddCustomParameter}>
-                {t('models.add_parameter')}
-              </Button>
+              <Flex gap={8} align="center">
+                <Button icon={<ClipboardCopy size={16} />} onClick={handleCopyCustomParameters}>
+                  {t('common.copy')}
+                </Button>
+                <Button icon={<ClipboardPaste size={16} />} onClick={handlePasteCustomParameters}>
+                  {t('common.paste')}
+                </Button>
+                <Button icon={<PlusIcon size={16} />} onClick={handleAddCustomParameter}>
+                  {t('models.add_parameter')}
+                </Button>
+              </Flex>
             </Flex>
             <CustomParametersList parameters={customParameters} onChange={handleCustomParametersChange} />
           </div>
         )}
+        <ActionBar>
+          <Flex justify="space-between" align="center" style={{ width: '100%' }}>
+            <Button
+              color="default"
+              variant="filled"
+              icon={showMoreSettings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              iconPosition="end"
+              onClick={() => setShowMoreSettings(!showMoreSettings)}
+              style={{ color: 'var(--color-text-3)' }}>
+              {t('settings.moresetting.label')}
+            </Button>
+            <Button type="primary" htmlType="submit" icon={<SaveIcon size={16} />}>
+              {t('common.save')}
+            </Button>
+          </Flex>
+        </ActionBar>
       </Form>
     </Modal>
   )
@@ -483,3 +525,109 @@ const TypeTitle = styled.div`
 `
 
 export default ModelEditContent
+
+const ActionBar = styled.div`
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 8px;
+  margin-top: 12px;
+  background: var(--color-background-modal, #fff);
+  border-top: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+`
+
+type ClipboardParameter = {
+  name?: unknown
+  type?: unknown
+  value?: unknown
+}
+
+const SUPPORTED_PARAMETER_TYPES: AssistantSettingCustomParameters['type'][] = ['string', 'number', 'boolean', 'json']
+
+const parseClipboardParameters = (rawText: string): AssistantSettingCustomParameters[] => {
+  let parsed: ClipboardParameter[]
+  try {
+    parsed = JSON.parse(rawText)
+  } catch (error) {
+    throw new Error('粘贴内容必须是 JSON 格式的数组')
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('粘贴内容必须是包含多条参数的数组')
+  }
+
+  if (parsed.length === 0) {
+    throw new Error('粘贴的参数列表为空')
+  }
+
+  return parsed.map((item, index) => normalizeClipboardParameter(item, index))
+}
+
+const normalizeClipboardParameter = (
+  item: ClipboardParameter,
+  index: number
+): AssistantSettingCustomParameters => {
+  const name = typeof item.name === 'string' ? item.name.trim() : ''
+  if (!name) {
+    throw new Error(`粘贴内容的第 ${index + 1} 条参数缺少名称`)
+  }
+
+  const rawType = typeof item.type === 'string' ? item.type.toLowerCase() : 'string'
+  const type = SUPPORTED_PARAMETER_TYPES.includes(rawType as AssistantSettingCustomParameters['type'])
+    ? (rawType as AssistantSettingCustomParameters['type'])
+    : 'string'
+
+  return {
+    name,
+    type,
+    value: normalizeClipboardValue(item.value, type, index)
+  }
+}
+
+const normalizeClipboardValue = (
+  value: unknown,
+  type: AssistantSettingCustomParameters['type'],
+  index: number
+): AssistantSettingCustomParameters['value'] => {
+  switch (type) {
+    case 'number': {
+      const numeric = typeof value === 'number' ? value : Number(value)
+      if (Number.isFinite(numeric)) {
+        return numeric
+      }
+      throw new Error(`第 ${index + 1} 条参数的值无法转换为数字`)
+    }
+    case 'boolean': {
+      if (typeof value === 'boolean') {
+        return value
+      }
+      if (typeof value === 'string') {
+        if (value.toLowerCase() === 'true') return true
+        if (value.toLowerCase() === 'false') return false
+      }
+      throw new Error(`第 ${index + 1} 条参数的值无法转换为布尔类型`)
+    }
+    case 'json': {
+      if (typeof value === 'string') {
+        validateJsonString(value, index)
+        return value
+      }
+      try {
+        return JSON.stringify(value ?? {})
+      } catch (error) {
+        throw new Error(`第 ${index + 1} 条参数无法序列化为 JSON`)
+      }
+    }
+    default:
+      return value === undefined || value === null ? '' : String(value)
+  }
+}
+
+const validateJsonString = (value: string, index: number) => {
+  try {
+    JSON.parse(value)
+  } catch (error) {
+    throw new Error(`第 ${index + 1} 条参数不是有效的 JSON 字符串`)
+  }
+}

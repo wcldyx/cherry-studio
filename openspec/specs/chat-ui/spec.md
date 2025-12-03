@@ -44,3 +44,7 @@ TBD - created by archiving change add-chat-tabbed-chat. Update Purpose after arc
 - **WHEN** 用户删除某个自定义参数或输入非法 JSON/重复 Key
 - **THEN** 系统必须提供清除入口并给出即时校验提示，阻止保存非法配置，确保最终模型不会残留过期参数
 
+#### Scenario: 复制粘贴参数集合
+- **WHEN** 用户点击复制动作或将符合约定格式的参数文本粘贴到“自定义参数”区域
+- **THEN** 系统必须支持一键复制当前所有参数，并在粘贴时自动解析生成多条参数项，失败时给出格式错误提示
+
