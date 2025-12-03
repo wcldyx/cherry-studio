@@ -1,4 +1,5 @@
 import CopyIcon from '@renderer/components/Icons/CopyIcon'
+import CustomParametersList from '@renderer/components/CustomParametersList'
 import {
   EmbeddingTag,
   ReasoningTag,
@@ -18,13 +19,13 @@ import {
   isWebSearchModel
 } from '@renderer/config/models'
 import { useDynamicLabelWidth } from '@renderer/hooks/useDynamicLabelWidth'
-import type { Model, ModelCapability, ModelType, Provider } from '@renderer/types'
+import type { AssistantSettingCustomParameters, Model, ModelCapability, ModelType, Provider } from '@renderer/types'
 import { getDefaultGroupName, getDifference, getUnion, uniqueObjectArray } from '@renderer/utils'
 import { isNewApiProvider } from '@renderer/utils/provider'
 import type { ModalProps } from 'antd'
 import { Button, Divider, Flex, Form, Input, InputNumber, message, Modal, Select, Switch, Tooltip } from 'antd'
 import { cloneDeep } from 'lodash'
-import { ChevronDown, ChevronUp, RotateCcw, SaveIcon } from 'lucide-react'
+import { ChevronDown, ChevronUp, PlusIcon, RotateCcw, SaveIcon } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -46,6 +47,9 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
   const [modelCapabilities, setModelCapabilities] = useState(model.capabilities || [])
   const originalModelCapabilities = cloneDeep(model.capabilities || [])
   const [supportedTextDelta, setSupportedTextDelta] = useState(model.supported_text_delta)
+  const [customParameters, setCustomParameters] = useState<AssistantSettingCustomParameters[]>(
+    model.customParameters ?? []
+  )
   const [hasUserModified, setHasUserModified] = useState(false)
 
   const labelWidth = useDynamicLabelWidth([t('settings.models.add.endpoint_type.label')])
@@ -56,6 +60,7 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
     supported_text_delta?: boolean
     currencySymbol?: string
     isCustomCurrency?: boolean
+    customParameters?: AssistantSettingCustomParameters[]
   }) => {
     const formValues = form.getFieldsValue()
     const currentIsCustomCurrency = overrides?.isCustomCurrency ?? isCustomCurrency
@@ -71,6 +76,7 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
       endpoint_type: isNewApiProvider(provider) ? formValues.endpointType : model.endpoint_type,
       capabilities: overrides?.capabilities ?? modelCapabilities,
       supported_text_delta: overrides?.supported_text_delta ?? supportedTextDelta,
+      customParameters: overrides?.customParameters ?? customParameters,
       pricing: {
         input_per_million_tokens: Number(formValues.input_per_million_tokens) || 0,
         output_per_million_tokens: Number(formValues.output_per_million_tokens) || 0,
@@ -90,6 +96,7 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
       endpoint_type: isNewApiProvider(provider) ? values.endpointType : model.endpoint_type,
       capabilities: modelCapabilities,
       supported_text_delta: supportedTextDelta,
+      customParameters,
       pricing: {
         input_per_million_tokens: Number(values.input_per_million_tokens) || 0,
         output_per_million_tokens: Number(values.output_per_million_tokens) || 0,
@@ -232,6 +239,22 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
       </>
     )
   }
+
+  const handleCustomParametersChange = useCallback(
+    (params: AssistantSettingCustomParameters[]) => {
+      setCustomParameters(params)
+      autoSave({ customParameters: params })
+    },
+    [autoSave]
+  )
+
+  const handleAddCustomParameter = useCallback(() => {
+    handleCustomParametersChange([...customParameters, { name: '', value: '', type: 'string' }])
+  }, [customParameters, handleCustomParametersChange])
+
+  useEffect(() => {
+    setCustomParameters(model.customParameters ?? [])
+  }, [model])
 
   return (
     <Modal title={t('models.edit')} footer={null} transitionName="animation-move-down" centered {...props}>
@@ -435,6 +458,14 @@ const ModelEditContent: FC<ModelEditContentProps & ModalProps> = ({ provider, mo
                 }}
               />
             </Form.Item>
+            <Divider style={{ margin: '16px 0' }} />
+            <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
+              <span style={{ fontWeight: 600 }}>{t('models.custom_parameters')}</span>
+              <Button icon={<PlusIcon size={16} />} onClick={handleAddCustomParameter}>
+                {t('models.add_parameter')}
+              </Button>
+            </Flex>
+            <CustomParametersList parameters={customParameters} onChange={handleCustomParametersChange} />
           </div>
         )}
       </Form>

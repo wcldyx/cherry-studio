@@ -265,6 +265,7 @@ export type Model = {
   owned_by?: string
   description?: string
   capabilities?: ModelCapability[]
+  customParameters?: AssistantSettingCustomParameters[]
   /**
    * @deprecated
    */

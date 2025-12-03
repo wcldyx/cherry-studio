@@ -791,7 +791,7 @@ export class AwsBedrockAPIClient extends BaseApiClient<
 
         // 构建基础自定义参数
         const customParams: Record<string, any> =
-          coreRequest.callType === 'chat' ? this.getCustomParameters(assistant) : {}
+          coreRequest.callType === 'chat' ? this.getCustomParameters(assistant, model) : {}
 
         // 根据模型类型添加 thinking 参数
         if (budgetTokens) {

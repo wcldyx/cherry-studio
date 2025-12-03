@@ -250,7 +250,7 @@ export function buildProviderOptions(
   }
 
   // 获取自定义参数并分离标准参数和 provider 特定参数
-  const customParams = getCustomParameters(assistant)
+  const customParams = getCustomParameters(assistant, model)
   const { standardParams, providerParams } = extractAiSdkStandardParams(customParams)
 
   // 合并 provider 特定的自定义参数到 providerSpecificOptions

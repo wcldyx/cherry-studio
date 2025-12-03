@@ -44,7 +44,6 @@ import type {
   SdkTool,
   SdkToolCall
 } from '@renderer/types/sdk'
-import { isJSON, parseJSON } from '@renderer/utils'
 import { addAbortController, removeAbortController } from '@renderer/utils/abortController'
 import { findFileBlocks, getMainTextContent } from '@renderer/utils/messageUtils/find'
 import { isSupportServiceTierProvider } from '@renderer/utils/provider'
@@ -52,6 +51,7 @@ import { defaultTimeout } from '@shared/config/constant'
 import { defaultAppHeaders } from '@shared/utils'
 import { isEmpty } from 'lodash'
 
+import { getCustomParameters as mergeCustomParameters } from '../../utils/reasoning'
 import type { CompletionsContext } from '../middleware/types'
 import type { ApiClient, RequestTransformer, ResponseChunkTransformer } from './types'
 
@@ -399,28 +399,8 @@ export abstract class BaseApiClient<
     return []
   }
 
-  protected getCustomParameters(assistant: Assistant) {
-    return (
-      assistant?.settings?.customParameters?.reduce((acc, param) => {
-        if (!param.name?.trim()) {
-          return acc
-        }
-        // Parse JSON type parameters (Legacy API clients)
-        // Related: src/renderer/src/pages/settings/AssistantSettings/AssistantModelSettings.tsx:133-148
-        // The UI stores JSON type params as strings, this function parses them before sending to API
-        if (param.type === 'json') {
-          const value = param.value as string
-          if (value === 'undefined') {
-            return { ...acc, [param.name]: undefined }
-          }
-          return { ...acc, [param.name]: isJSON(value) ? parseJSON(value) : value }
-        }
-        return {
-          ...acc,
-          [param.name]: param.value
-        }
-      }, {}) || {}
-    )
+  protected getCustomParameters(assistant: Assistant, model?: Model) {
+    return mergeCustomParameters(assistant, model)
   }
 
   public createAbortController(messageId?: string, isAddEventListener?: boolean) {

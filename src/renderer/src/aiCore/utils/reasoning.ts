@@ -35,7 +35,7 @@ import {
 } from '@renderer/config/models'
 import { getStoreSetting } from '@renderer/hooks/useSettings'
 import { getAssistantSettings, getProviderByModel } from '@renderer/services/AssistantService'
-import type { Assistant, Model } from '@renderer/types'
+import type { Assistant, AssistantSettingCustomParameters, Model } from '@renderer/types'
 import { EFFORT_RATIO, isSystemProvider, SystemProviderIds } from '@renderer/types'
 import type { OpenAISummaryText } from '@renderer/types/aiCoreTypes'
 import type { ReasoningEffortOptionalParams } from '@renderer/types/sdk'
@@ -663,35 +663,41 @@ export function getBedrockReasoningParams(
   }
 }
 
+const reduceCustomParameters = (params?: AssistantSettingCustomParameters[]): Record<string, any> => {
+  if (!params || params.length === 0) {
+    return {}
+  }
+
+  return params.reduce((acc, param) => {
+    if (!param.name?.trim()) {
+      return acc
+    }
+    if (param.type === 'json') {
+      const value = param.value as string
+      if (value === 'undefined') {
+        return { ...acc, [param.name]: undefined }
+      }
+      try {
+        return { ...acc, [param.name]: JSON.parse(value) }
+      } catch {
+        return { ...acc, [param.name]: value }
+      }
+    }
+    return {
+      ...acc,
+      [param.name]: param.value
+    }
+  }, {} as Record<string, any>)
+}
+
 /**
- * 获取自定义参数
- * 从 assistant 设置中提取自定义参数
+ * 获取自定义参数（模型级别 + 助手级别）
  */
-export function getCustomParameters(assistant: Assistant): Record<string, any> {
-  return (
-    assistant?.settings?.customParameters?.reduce((acc, param) => {
-      if (!param.name?.trim()) {
-        return acc
-      }
-      // Parse JSON type parameters
-      // Related: src/renderer/src/pages/settings/AssistantSettings/AssistantModelSettings.tsx:133-148
-      // The UI stores JSON type params as strings (e.g., '{"key":"value"}')
-      // This function parses them into objects before sending to the API
-      if (param.type === 'json') {
-        const value = param.value as string
-        if (value === 'undefined') {
-          return { ...acc, [param.name]: undefined }
-        }
-        try {
-          return { ...acc, [param.name]: JSON.parse(value) }
-        } catch {
-          return { ...acc, [param.name]: value }
-        }
-      }
-      return {
-        ...acc,
-        [param.name]: param.value
-      }
-    }, {}) || {}
-  )
+export function getCustomParameters(assistant: Assistant, model?: Model): Record<string, any> {
+  const modelParams = reduceCustomParameters(model?.customParameters)
+  const assistantParams = reduceCustomParameters(assistant?.settings?.customParameters)
+  return {
+    ...modelParams,
+    ...assistantParams
+  }
 }

@@ -988,5 +988,59 @@ describe('reasoning utils', () => {
         valid: 'value3'
       })
     })
+
+    it('should include model-level custom parameters', () => {
+      const assistant = {
+        id: 'assistant',
+        name: 'Assistant',
+        settings: {}
+      } as Assistant
+      const model = {
+        id: 'model',
+        provider: 'openai',
+        name: 'Test Model',
+        group: 'default',
+        customParameters: [
+          { name: 'modelParam', value: 'value', type: 'string' },
+          { name: 'jsonParam', value: '{"foo": "bar"}', type: 'json' }
+        ]
+      } as Model
+
+      const result = getCustomParameters(assistant, model)
+      expect(result).toEqual({
+        modelParam: 'value',
+        jsonParam: { foo: 'bar' }
+      })
+    })
+
+    it('should let assistant parameters override model-level ones', () => {
+      const assistant = {
+        id: 'assistant',
+        name: 'Assistant',
+        settings: {
+          customParameters: [
+            { name: 'shared', value: 'assistant', type: 'string' },
+            { name: 'onlyAssistant', value: 1, type: 'number' }
+          ]
+        }
+      } as Assistant
+      const model = {
+        id: 'model',
+        provider: 'openai',
+        name: 'Test Model',
+        group: 'default',
+        customParameters: [
+          { name: 'shared', value: 'model', type: 'string' },
+          { name: 'onlyModel', value: true, type: 'boolean' }
+        ]
+      } as Model
+
+      const result = getCustomParameters(assistant, model)
+      expect(result).toEqual({
+        shared: 'assistant',
+        onlyAssistant: 1,
+        onlyModel: true
+      })
+    })
   })
 })

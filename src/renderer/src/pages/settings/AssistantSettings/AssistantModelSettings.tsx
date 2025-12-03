@@ -5,6 +5,7 @@ import { DeleteIcon, ResetIcon } from '@renderer/components/Icons'
 import { HStack } from '@renderer/components/Layout'
 import { SelectModelPopup } from '@renderer/components/Popups/SelectModelPopup'
 import Selector from '@renderer/components/Selector'
+import CustomParametersList from '@renderer/components/CustomParametersList'
 import { DEFAULT_CONTEXTCOUNT, DEFAULT_TEMPERATURE, MAX_CONTEXT_COUNT } from '@renderer/config/constant'
 import { isEmbeddingModel, isRerankModel } from '@renderer/config/models'
 import { useTimer } from '@renderer/hooks/useTimer'
@@ -12,11 +13,11 @@ import { SettingRow } from '@renderer/pages/settings'
 import { DEFAULT_ASSISTANT_SETTINGS } from '@renderer/services/AssistantService'
 import type { Assistant, AssistantSettingCustomParameters, AssistantSettings, Model } from '@renderer/types'
 import { modalConfirm } from '@renderer/utils'
-import { Button, Col, Divider, Input, InputNumber, Row, Select, Slider, Switch, Tooltip } from 'antd'
+import { Button, Col, Divider, InputNumber, Row, Slider, Switch, Tooltip } from 'antd'
 import { isNull } from 'lodash'
 import { PlusIcon } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
@@ -43,10 +44,6 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
   )
   const [enableTemperature, setEnableTemperature] = useState(assistant?.settings?.enableTemperature ?? true)
 
-  const customParametersRef = useRef(customParameters)
-
-  customParametersRef.current = customParameters
-
   const { t } = useTranslation()
   const { setTimeoutTimer } = useTimer()
 
@@ -70,101 +67,16 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
 
   const onAddCustomParameter = () => {
     const newParam = { name: '', value: '', type: 'string' as const }
-    const newParams = [...customParameters, newParam]
-    setCustomParameters(newParams)
-    updateAssistantSettings({ customParameters: newParams })
+    handleCustomParametersChange([...customParameters, newParam])
   }
 
-  const onUpdateCustomParameter = (
-    index: number,
-    field: 'name' | 'value' | 'type',
-    value: string | number | boolean | object
-  ) => {
-    const newParams = [...customParameters]
-    if (field === 'type') {
-      let defaultValue: any = ''
-      switch (value) {
-        case 'number':
-          defaultValue = 0
-          break
-        case 'boolean':
-          defaultValue = false
-          break
-        case 'json':
-          defaultValue = ''
-          break
-        default:
-          defaultValue = ''
-      }
-      newParams[index] = {
-        ...newParams[index],
-        type: value as any,
-        value: defaultValue
-      }
-    } else {
-      newParams[index] = { ...newParams[index], [field]: value }
-    }
-    setCustomParameters(newParams)
-  }
-
-  const renderParameterValueInput = (param: (typeof customParameters)[0], index: number) => {
-    switch (param.type) {
-      case 'number':
-        return (
-          <InputNumber
-            style={{ width: '100%' }}
-            value={param.value as number}
-            onChange={(value) => onUpdateCustomParameter(index, 'value', value || 0)}
-            step={0.01}
-          />
-        )
-      case 'boolean':
-        return (
-          <Select
-            value={param.value as boolean}
-            onChange={(value) => onUpdateCustomParameter(index, 'value', value)}
-            style={{ width: '100%' }}
-            options={[
-              { label: 'true', value: true },
-              { label: 'false', value: false }
-            ]}
-          />
-        )
-      case 'json':
-        return (
-          <Input
-            value={typeof param.value === 'string' ? param.value : JSON.stringify(param.value, null, 2)}
-            onChange={(e) => {
-              // For JSON type parameters, always store the value as a STRING
-              //
-              // Data Flow:
-              // 1. UI stores: { name: "config", value: '{"key":"value"}', type: "json" } ← STRING format
-              // 2. API parses: getCustomParameters() in src/renderer/src/aiCore/utils/reasoning.ts:687-696
-              //                calls JSON.parse() to convert string to object
-              // 3. Request sends: The parsed object is sent to the AI provider
-              //
-              // Previously this code was parsing JSON here and storing
-              // the object directly, which caused getCustomParameters() to fail when trying
-              // to JSON.parse() an already-parsed object.
-              onUpdateCustomParameter(index, 'value', e.target.value)
-            }}
-          />
-        )
-      default:
-        return (
-          <Input
-            value={param.value as string}
-            onChange={(e) => onUpdateCustomParameter(index, 'value', e.target.value)}
-          />
-        )
-    }
-  }
-
-  const onDeleteCustomParameter = (index: number) => {
-    const newParams = customParameters.filter((_, i) => i !== index)
-    setCustomParameters(newParams)
-    updateAssistantSettings({ customParameters: newParams })
-  }
+  const handleCustomParametersChange = useCallback(
+    (params: AssistantSettingCustomParameters[]) => {
+      setCustomParameters(params)
+      updateAssistantSettings({ customParameters: params })
+    },
+    [updateAssistantSettings]
+  )
 
   const onReset = () => {
     setTemperature(DEFAULT_ASSISTANT_SETTINGS.temperature)
@@ -175,7 +87,7 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
     setStreamOutput(DEFAULT_ASSISTANT_SETTINGS.streamOutput)
     setTopP(DEFAULT_ASSISTANT_SETTINGS.topP)
     setEnableTopP(DEFAULT_ASSISTANT_SETTINGS.enableTopP ?? false)
-    setCustomParameters(DEFAULT_ASSISTANT_SETTINGS.customParameters ?? [])
+    handleCustomParametersChange(DEFAULT_ASSISTANT_SETTINGS.customParameters ?? [])
     setToolUseMode(DEFAULT_ASSISTANT_SETTINGS.toolUseMode)
     updateAssistantSettings(DEFAULT_ASSISTANT_SETTINGS)
   }
@@ -201,11 +113,6 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
       }
     }
   }, [assistant, defaultModel, setTimeoutTimer, updateAssistant, updateAssistantSettings])
-
-  useEffect(() => {
-    return () => updateAssistantSettings({ customParameters: customParametersRef.current })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const formatSliderTooltip = (value?: number) => {
     if (value === undefined) return ''
@@ -459,37 +366,7 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
           {t('models.add_parameter')}
         </Button>
       </SettingRow>
-      {customParameters.map((param, index) => (
-        <Row key={index} align="stretch" gutter={10} style={{ marginTop: 10 }}>
-          <Col span={6}>
-            <Input
-              placeholder={t('models.parameter_name')}
-              value={param.name}
-              onChange={(e) => onUpdateCustomParameter(index, 'name', e.target.value)}
-            />
-          </Col>
-          <Col span={6}>
-            <Select
-              value={param.type}
-              onChange={(value) => onUpdateCustomParameter(index, 'type', value)}
-              style={{ width: '100%' }}>
-              <Select.Option value="string">{t('models.parameter_type.string')}</Select.Option>
-              <Select.Option value="number">{t('models.parameter_type.number')}</Select.Option>
-              <Select.Option value="boolean">{t('models.parameter_type.boolean')}</Select.Option>
-              <Select.Option value="json">{t('models.parameter_type.json')}</Select.Option>
-            </Select>
-          </Col>
-          <Col span={10}>{renderParameterValueInput(param, index)}</Col>
-          <Col span={2} style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              color="danger"
-              variant="filled"
-              icon={<DeleteIcon size={14} className="lucide-custom" />}
-              onClick={() => onDeleteCustomParameter(index)}
-            />
-          </Col>
-        </Row>
-      ))}
+      <CustomParametersList parameters={customParameters} onChange={handleCustomParametersChange} />
       <Divider style={{ margin: '15px 0' }} />
       <HStack justifyContent="flex-end">
         <Button onClick={onReset} danger type="primary" icon={<ResetIcon size={16} />}>
