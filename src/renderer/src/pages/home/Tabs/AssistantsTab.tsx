@@ -21,7 +21,7 @@ import { useUnifiedSorting } from './hooks/useUnifiedSorting'
 
 interface AssistantsTabProps {
   activeAssistant: Assistant
-  setActiveAssistant: (assistant: Assistant) => void
+  setActiveAssistant: (assistant: Assistant, options?: { topic?: Topic }) => void
   onCreateAssistant: () => void
   onCreateDefaultAssistant: () => void
 }

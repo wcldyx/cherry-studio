@@ -25,7 +25,7 @@ import Topics from './TopicsTab'
 interface Props {
   activeAssistant: Assistant
   activeTopic: Topic
-  setActiveAssistant: (assistant: Assistant) => void
+  setActiveAssistant: (assistant: Assistant, options?: { topic?: Topic }) => void
   setActiveTopic: (topic: Topic) => void
   position: 'left' | 'right'
   forceToSeeAllTab?: boolean

@@ -46,19 +46,22 @@ const HomePage: FC = () => {
 
   const setActiveAssistant = useCallback(
     // TODO: allow to set it as null.
-    (newAssistant: Assistant) => {
-      if (newAssistant.id === activeAssistant?.id) return
+    (newAssistant: Assistant, options?: { topic?: Topic }) => {
+      const targetTopic = options?.topic || newAssistant.topics[0]
+      if (newAssistant.id === activeAssistant?.id && targetTopic?.id === activeTopic?.id) {
+        return
+      }
       startTransition(() => {
         _setActiveAssistant(newAssistant)
         if (newAssistant.id !== 'fake') {
           dispatch(setActiveAgentId(null))
         }
-        // 同步更新 active topic，避免不必要的重新渲染
-        const newTopic = newAssistant.topics[0]
-        _setActiveTopic((prev) => (newTopic?.id === prev.id ? prev : newTopic))
+        if (targetTopic) {
+          _setActiveTopic((prev) => (targetTopic.id === prev.id ? prev : targetTopic))
+        }
       })
     },
-    [_setActiveTopic, activeAssistant?.id, dispatch]
+    [_setActiveTopic, activeAssistant?.id, activeTopic?.id, dispatch]
   )
 
   const setActiveTopic = useCallback(

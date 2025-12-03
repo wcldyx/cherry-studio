@@ -12,7 +12,7 @@ import AddButton from './AddButton'
 
 interface UnifiedAddButtonProps {
   onCreateAssistant: () => void
-  setActiveAssistant: (a: Assistant) => void
+  setActiveAssistant: (a: Assistant, options?: { topic?: Topic }) => void
   setActiveAgentId: (id: string) => void
 }
 

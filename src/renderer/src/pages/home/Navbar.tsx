@@ -24,7 +24,7 @@ interface Props {
   activeAssistant: Assistant
   activeTopic: Topic
   setActiveTopic: (topic: Topic) => void
-  setActiveAssistant: (assistant: Assistant) => void
+  setActiveAssistant: (assistant: Assistant, options?: { topic?: Topic }) => void
   position: 'left' | 'right'
   activeTopicOrSession?: 'topic' | 'session'
 }

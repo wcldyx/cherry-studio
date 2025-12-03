@@ -9,7 +9,7 @@ import HomeTabs from '../Tabs'
 
 interface ShowParams {
   activeAssistant: Assistant
-  setActiveAssistant: (assistant: Assistant) => void
+  setActiveAssistant: (assistant: Assistant, options?: { topic?: Topic }) => void
   activeTopic: Topic
   setActiveTopic: (topic: Topic) => void
 }

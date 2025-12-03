@@ -45,7 +45,7 @@ interface Props {
   assistant: Assistant
   activeTopic: Topic
   setActiveTopic: (topic: Topic) => void
-  setActiveAssistant: (assistant: Assistant) => void
+  setActiveAssistant: (assistant: Assistant, options?: { topic?: Topic }) => void
 }
 
 const Chat: FC<Props> = (props) => {
@@ -248,7 +248,7 @@ const Chat: FC<Props> = (props) => {
         return
       }
       if (targetAssistant.id !== propAssistant.id) {
-        setActiveAssistantProp(targetAssistant)
+        setActiveAssistantProp(targetAssistant, { topic: targetTopic })
         return
       }
       if (targetTopic.id !== propActiveTopic?.id) {
