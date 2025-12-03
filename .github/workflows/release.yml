@@ -26,10 +26,10 @@ jobs:
     steps:
       - name: Enable Git long paths on Windows
         if: matrix.os == 'windows-latest'
-        run: git config --system core.longpaths true
+        run: git config --global core.longpaths true
 
       - name: Check out Git repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
