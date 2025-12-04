@@ -775,6 +775,13 @@
         "label": "Multiple Select"
       }
     },
+    "tabs": {
+      "status": {
+        "running": "Generating",
+        "success": "Completed",
+        "error": "Failed"
+      }
+    },
     "navigation": {
       "bottom": "Back to bottom",
       "close": "Close",

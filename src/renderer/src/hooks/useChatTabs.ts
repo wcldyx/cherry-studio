@@ -10,8 +10,7 @@ import type { Assistant, Topic } from '@renderer/types'
 import type { ChatTab } from '@renderer/types/chat'
 import { useCallback } from 'react'
 
-export const getTopicTabId = (topicId: string) => `topic:${topicId}`
-export const getSessionTabId = (agentId: string, sessionId: string) => `session:${agentId}:${sessionId}`
+import { getSessionTabId, getTopicTabId } from '@renderer/utils/chatTabs'
 
 export const useChatTabs = () => {
   const dispatch = useAppDispatch()

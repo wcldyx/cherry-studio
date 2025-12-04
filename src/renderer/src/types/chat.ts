@@ -2,6 +2,8 @@ export type Tab = 'assistants' | 'topic' | 'settings'
 
 export type ChatTabType = 'topic' | 'session'
 
+export type ChatTabStatus = 'idle' | 'running' | 'success' | 'error'
+
 export interface ChatTab {
   id: string
   title: string
@@ -9,6 +11,9 @@ export interface ChatTab {
   assistantId: string
   topicId?: string
   sessionId?: string
+  status: ChatTabStatus
+  pendingRequests: number
+  hasPendingError: boolean
 }
 
 export type InputBarToolType =

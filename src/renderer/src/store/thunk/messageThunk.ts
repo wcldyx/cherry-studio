@@ -12,6 +12,7 @@ import { endSpan } from '@renderer/services/SpanManagerService'
 import { createStreamProcessor, type StreamProcessorCallbacks } from '@renderer/services/StreamProcessingService'
 import store from '@renderer/store'
 import { updateTopicUpdatedAt } from '@renderer/store/assistants'
+import { startChatTabTaskAction } from '@renderer/store/runtime'
 import { type ApiServerConfig, type Assistant, type FileMetadata, type Model, type Topic } from '@renderer/types'
 import type { AgentSessionEntity, GetAgentSessionResponse } from '@renderer/types/agent'
 import { ChunkType } from '@renderer/types/chunk'
@@ -24,6 +25,7 @@ import {
   extractAgentSessionIdFromTopicId,
   isAgentSessionTopicId
 } from '@renderer/utils/agentSession'
+import { getSessionTabId, getTopicTabId } from '@renderer/utils/chatTabs'
 import {
   createAssistantMessage,
   createTranslationBlock,
@@ -113,6 +115,17 @@ const findExistingAgentSessionContext = (
     sessionId,
     agentSessionId: existingAgentSessionId
   }
+}
+
+const resolveChatTabId = (topicId: string, assistantId: string): string | null => {
+  if (isAgentSessionTopicId(topicId)) {
+    const sessionId = extractAgentSessionIdFromTopicId(topicId)
+    if (!sessionId) {
+      return null
+    }
+    return getSessionTabId(assistantId, sessionId)
+  }
+  return getTopicTabId(topicId)
 }
 
 const buildAgentBaseURL = (apiServer: ApiServerConfig) => {
@@ -532,6 +545,10 @@ const fetchAndProcessAgentResponseImpl = async (
   getState: () => RootState,
   { topicId, assistant, assistantMessage, agentSession, userMessageId }: AgentStreamParams
 ) => {
+  const chatTabId = resolveChatTabId(topicId, assistant.id)
+  if (chatTabId) {
+    dispatch(startChatTabTaskAction({ tabId: chatTabId, messageId: assistantMessage.id }))
+  }
   let callbacks: StreamProcessorCallbacks = {}
   try {
     dispatch(newMessagesActions.setTopicLoading({ topicId, loading: true }))
@@ -744,6 +761,10 @@ const fetchAndProcessAssistantResponseImpl = async (
   origAssistant: Assistant,
   assistantMessage: Message // Pass the prepared assistant message (new or reset)
 ) => {
+  const chatTabId = resolveChatTabId(topicId, origAssistant.id)
+  if (chatTabId) {
+    dispatch(startChatTabTaskAction({ tabId: chatTabId, messageId: assistantMessage.id }))
+  }
   const topic = origAssistant.topics.find((t) => t.id === topicId)
   const assistant = topic?.prompt
     ? { ...origAssistant, prompt: `${origAssistant.prompt}\n${topic.prompt}` }

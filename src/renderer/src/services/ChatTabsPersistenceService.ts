@@ -3,15 +3,25 @@ import type { Store } from '@reduxjs/toolkit'
 import type { RootState } from '@renderer/store'
 import { hydrateChatTabsAction } from '@renderer/store/runtime'
 import type { ChatTab } from '@renderer/types/chat'
+import type { ChatTabStatus } from '@renderer/types/chat'
 
 const logger = loggerService.withContext('ChatTabsPersistenceService')
+
+const sanitizeStatus = (candidate: Partial<ChatTab>): ChatTabStatus => {
+  if (candidate.status === 'running' || candidate.status === 'success' || candidate.status === 'error') {
+    return candidate.status
+  }
+  return 'idle'
+}
 
 export const CHAT_TABS_STORAGE_KEY = 'chat-tabs-state'
 const CHAT_TABS_STORAGE_VERSION = 1
 
+type PersistedChatTab = Omit<ChatTab, 'status' | 'pendingRequests' | 'hasPendingError'>
+
 export interface PersistedChatTabsState {
   version: number
-  tabs: ChatTab[]
+  tabs: PersistedChatTab[]
   activeTabId: string | null
 }
 
@@ -40,7 +50,10 @@ export const normalizePersistedChatTabs = (raw: unknown): NormalizedPersistedCha
       id: tabCandidate.id,
       title: tabCandidate.title,
       type: tabCandidate.type,
-      assistantId: tabCandidate.assistantId
+      assistantId: tabCandidate.assistantId,
+      status: sanitizeStatus(tabCandidate),
+      pendingRequests: 0,
+      hasPendingError: false
     }
 
     if (tabCandidate.topicId && typeof tabCandidate.topicId === 'string') {
@@ -74,7 +87,7 @@ export const normalizePersistedChatTabs = (raw: unknown): NormalizedPersistedCha
 
 export const buildPersistedChatTabsState = (tabs: ChatTab[], activeTabId: string | null): PersistedChatTabsState => ({
   version: CHAT_TABS_STORAGE_VERSION,
-  tabs,
+  tabs: tabs.map(({ status, pendingRequests, hasPendingError, ...rest }) => rest),
   activeTabId
 })
 

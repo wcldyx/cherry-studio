@@ -3,6 +3,7 @@ import { loggerService } from '@logger'
 
 import { startAutoSync } from './services/BackupService'
 import chatTabsPersistenceService from './services/ChatTabsPersistenceService'
+import chatTabStatusService from './services/ChatTabStatusService'
 import { startNutstoreAutoSync } from './services/NutstoreService'
 import storeSyncService from './services/StoreSyncService'
 import { webTraceService } from './services/WebTraceService'
@@ -40,8 +41,13 @@ function initChatTabsPersistence() {
   chatTabsPersistenceService.init(store)
 }
 
+function initChatTabStatus() {
+  chatTabStatusService.init(store)
+}
+
 initKeyv()
 initAutoSync()
 initStoreSync()
 initWebTrace()
 initChatTabsPersistence()
+initChatTabStatus()

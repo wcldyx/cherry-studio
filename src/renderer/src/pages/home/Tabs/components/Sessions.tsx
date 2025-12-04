@@ -1,7 +1,7 @@
 import { DynamicVirtualList } from '@renderer/components/VirtualList'
 import { useCreateDefaultSession } from '@renderer/hooks/agents/useCreateDefaultSession'
 import { useSessions } from '@renderer/hooks/agents/useSessions'
-import { getSessionTabId, useChatTabs } from '@renderer/hooks/useChatTabs'
+import { useChatTabs } from '@renderer/hooks/useChatTabs'
 import { useRuntime } from '@renderer/hooks/useRuntime'
 import { useAppDispatch } from '@renderer/store'
 import { newMessagesActions } from '@renderer/store/newMessage'
@@ -11,6 +11,7 @@ import {
   setSessionWaitingAction
 } from '@renderer/store/runtime'
 import { buildAgentSessionTopicId } from '@renderer/utils/agentSession'
+import { getSessionTabId } from '@renderer/utils/chatTabs'
 import { Alert, Spin } from 'antd'
 import { motion } from 'framer-motion'
 import { memo, useCallback, useEffect } from 'react'

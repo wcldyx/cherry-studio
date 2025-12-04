@@ -10,7 +10,7 @@ import { Plus, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import styled, { css } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
 
 interface ChatTabsBarProps {
   onCreateSession?: () => void
@@ -101,6 +101,18 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
                 {tab.assistantEmoji && <span className="emoji">{tab.assistantEmoji}</span>}
                 <span className="title">{tab.title || tab.assistantName || t('chat.default.topic.name')}</span>
               </TabLabel>
+              {tab.status !== 'idle' && (
+                <StatusBadge
+                  status={tab.status}
+                  title={
+                    tab.status === 'running'
+                      ? t('chat.tabs.status.running')
+                      : tab.status === 'success'
+                        ? t('chat.tabs.status.success')
+                        : t('chat.tabs.status.error')
+                  }
+                />
+              )}
               <CloseButton
                 className="close-button"
                 data-no-dnd
@@ -220,6 +232,47 @@ const AddButton = styled.button`
     color: var(--color-text);
     background: var(--color-list-item);
   }
+`
+
+const spin = keyframes`
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+`
+
+const StatusBadge = styled.span<{ status: ChatTab['status'] }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  ${(props) =>
+    props.status === 'running' &&
+    css`
+      border: 2px solid var(--color-text-3);
+      border-top-color: transparent;
+      border-right-color: transparent;
+      background: transparent;
+      animation: ${spin} 0.8s linear infinite;
+    `}
+  ${(props) =>
+    props.status === 'success' &&
+    css`
+      background: var(--color-primary);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+    `}
+  ${(props) =>
+    props.status === 'error' &&
+    css`
+      background: var(--color-error);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+    `}
 `
 
 export default ChatTabsBar

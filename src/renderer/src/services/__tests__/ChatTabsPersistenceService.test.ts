@@ -25,6 +25,7 @@ const createMockState = (chatOverride?: Partial<RootState['runtime']['chat']>): 
         sessionWaiting: {},
         tabs: [],
         activeTabId: null,
+        messageTabMap: {},
         ...chatOverride
       }
     }
@@ -56,7 +57,10 @@ const buildTab = (overrides: Partial<ChatTab>): ChatTab => ({
   type: overrides.type ?? 'topic',
   assistantId: overrides.assistantId ?? 'assistant-1',
   topicId: overrides.topicId,
-  sessionId: overrides.sessionId
+  sessionId: overrides.sessionId,
+  status: overrides.status ?? 'idle',
+  pendingRequests: overrides.pendingRequests ?? 0,
+  hasPendingError: overrides.hasPendingError ?? false
 })
 
 describe('ChatTabsPersistenceService helpers', () => {
@@ -84,14 +88,20 @@ describe('ChatTabsPersistenceService helpers', () => {
           title: 'Valid Topic',
           assistantId: 'assistant-1',
           type: 'topic',
-          topicId: 't1'
+          topicId: 't1',
+          status: 'idle',
+          pendingRequests: 0,
+          hasPendingError: false
         },
         {
           id: 'session:1',
           title: 'Session',
           assistantId: 'assistant-2',
           type: 'session',
-          sessionId: 's1'
+          sessionId: 's1',
+          status: 'idle',
+          pendingRequests: 0,
+          hasPendingError: false
         }
       ],
       activeTabId: 'topic:1'
@@ -136,7 +146,18 @@ describe('ChatTabsPersistenceService', () => {
 
     expect(store.dispatch).toHaveBeenCalledWith(
       hydrateChatTabsAction({
-        tabs: persisted.tabs,
+        tabs: [
+          {
+            id: 'topic:seed',
+            title: 'Seed Topic',
+            assistantId: 'assistant-1',
+            type: 'topic',
+            topicId: 'topic-1',
+            status: 'idle',
+            pendingRequests: 0,
+            hasPendingError: false
+          }
+        ],
         activeTabId: 'topic:seed'
       })
     )

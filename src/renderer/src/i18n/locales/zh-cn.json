@@ -775,6 +775,13 @@
         "label": "多选"
       }
     },
+    "tabs": {
+      "status": {
+        "running": "生成中",
+        "success": "已完成",
+        "error": "发生错误"
+      }
+    },
     "navigation": {
       "bottom": "回到底部",
       "close": "关闭",
