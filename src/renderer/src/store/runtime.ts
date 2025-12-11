@@ -61,6 +61,7 @@ export interface UpdateState {
   downloaded: boolean
   downloadProgress: number
   available: boolean
+  ignore: boolean
 }
 
 export interface RuntimeState {
@@ -106,7 +107,8 @@ const initialState: RuntimeState = {
     downloading: false,
     downloaded: false,
     downloadProgress: 0,
-    available: false
+    available: false,
+    ignore: false
   },
   export: {
     isExporting: false
