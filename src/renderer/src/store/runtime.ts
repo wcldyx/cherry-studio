@@ -296,6 +296,9 @@ const runtimeSlice = createSlice({
         tab.status = 'error'
       } else if (result === 'cancelled') {
         tab.status = 'idle'
+      } else if (tab.id === state.chat.activeTabId) {
+        // 如果用户正在当前标签且已看到最新消息，不显示完成徽标
+        tab.status = 'idle'
       } else {
         tab.status = 'success'
       }

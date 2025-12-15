@@ -18,12 +18,15 @@ export interface HorizontalScrollContainerProps {
   dependencies?: readonly unknown[]
   scrollDistance?: number
   className?: string
-  classNames?: {
+ classNames?: {
     container?: string
     content?: string
   }
   gap?: string
   expandable?: boolean
+  allowVisibleOverflow?: boolean
+  contentRef?: React.Ref<HTMLDivElement | null>
+  onWheel?: React.WheelEventHandler<HTMLDivElement>
 }
 
 const HorizontalScrollContainer: React.FC<HorizontalScrollContainerProps> = ({
@@ -33,7 +36,10 @@ const HorizontalScrollContainer: React.FC<HorizontalScrollContainerProps> = ({
   className,
   classNames,
   gap = '8px',
-  expandable = false
+  expandable = false,
+  allowVisibleOverflow = true,
+  contentRef,
+  onWheel
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [canScroll, setCanScroll] = useState(false)
@@ -106,11 +112,20 @@ const HorizontalScrollContainer: React.FC<HorizontalScrollContainerProps> = ({
       $disableHoverButton={isScrolledToEnd}
       onClick={expandable ? handleContainerClick : undefined}>
       <ScrollContent
-        ref={scrollRef}
+        ref={(node) => {
+          scrollRef.current = node
+          if (!contentRef) return
+          if (typeof contentRef === 'function') {
+            contentRef(node)
+          } else {
+            ;(contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+          }
+        }}
         $gap={gap}
         $isExpanded={isExpanded}
         $expandable={expandable}
-        $allowVisibleOverflow
+        $allowVisibleOverflow={allowVisibleOverflow}
+        onWheel={onWheel}
         className={cn(classNames?.content)}>
         {children}
       </ScrollContent>
@@ -150,12 +165,13 @@ const ScrollContent = styled(Scrollbar)<{
   $allowVisibleOverflow?: boolean
 }>`
   display: flex;
-  overflow-x: ${(props) => (props.$expandable && props.$isExpanded ? 'hidden' : 'auto')};
-  overflow-y: hidden;
+  overflow-x: ${(props) =>
+    props.$allowVisibleOverflow && !(props.$expandable && props.$isExpanded) ? 'visible' : 'auto'};
+  overflow-y: ${(props) =>
+    props.$allowVisibleOverflow && !(props.$expandable && props.$isExpanded) ? 'visible' : 'hidden'};
   white-space: ${(props) => (props.$expandable && props.$isExpanded ? 'normal' : 'nowrap')};
   gap: ${(props) => props.$gap};
   flex-wrap: ${(props) => (props.$expandable && props.$isExpanded ? 'wrap' : 'nowrap')};
-  ${(props) => props.$allowVisibleOverflow && 'overflow: visible;'}
 
   &::-webkit-scrollbar {
     display: none;

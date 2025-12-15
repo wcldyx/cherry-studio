@@ -8,7 +8,7 @@ import type { ChatTab } from '@renderer/types/chat'
 import { classNames } from '@renderer/utils'
 import { Plus, X } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { css, keyframes } from 'styled-components'
 
@@ -22,6 +22,11 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
   const { tabs, activeTabId, closeTab, reorderTabs, setActiveTab } = useChatTabs()
   const { chat } = useRuntime()
   const { t } = useTranslation()
+  const scrollContentRef = useRef<HTMLDivElement>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const overflowStateRef = useRef(false)
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const itemGap = isOverflowing ? '0px' : '6px'
 
   const { onSortEnd } = useDndReorder<ChatTab>({
     originalList: tabs,
@@ -65,6 +70,89 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
     }
   }, [chat.activeTopicOrSession, onCreateSession])
 
+  useEffect(() => {
+    const content = scrollContentRef.current
+    if (!content) return
+
+    const measureOverflow = () => {
+      const overflowWidth = content.scrollWidth - content.clientWidth
+      const nextOverflow =
+        overflowWidth > 12 ? true : overflowWidth < 4 ? false : overflowStateRef.current
+      if (overflowStateRef.current !== nextOverflow) {
+        overflowStateRef.current = nextOverflow
+        setIsOverflowing(nextOverflow)
+      }
+    }
+
+    measureOverflow()
+
+    const resizeObserver = new ResizeObserver(measureOverflow)
+    resizeObserver.observe(content)
+    window.addEventListener('resize', measureOverflow)
+    content.addEventListener('scroll', measureOverflow)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', measureOverflow)
+      content.removeEventListener('scroll', measureOverflow)
+    }
+  }, [tabsWithAssistant, activeTabId])
+
+  useEffect(() => {
+    const ids = new Set(tabs.map((item) => item.id))
+    Object.keys(tabRefs.current).forEach((id) => {
+      if (!ids.has(id)) {
+        delete tabRefs.current[id]
+      }
+    })
+  }, [tabs])
+
+  const handleWheelScroll = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      if (!isOverflowing) return
+      const container = scrollContentRef.current
+      if (!container) return
+      const dominantDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+      if (dominantDelta === 0) return
+      container.scrollBy({ left: dominantDelta, behavior: 'auto' })
+      event.preventDefault()
+    },
+    [isOverflowing]
+  )
+
+  useEffect(() => {
+    if (!activeTabId) return
+    const container = scrollContentRef.current
+    const target = tabRefs.current[activeTabId]
+    if (!container || !target) return
+
+    const ensureVisible = () => {
+      const containerRect = container.getBoundingClientRect()
+      const targetRect = target.getBoundingClientRect()
+      const padding = 12
+      const isLeftHidden = targetRect.left < containerRect.left + padding
+      const isRightHidden = targetRect.right > containerRect.right - padding
+      if (!isLeftHidden && !isRightHidden) return
+
+      try {
+        target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+        return
+      } catch {
+        // ignore and fallback
+      }
+
+      const delta =
+        targetRect.left - containerRect.left - container.clientWidth / 2 + targetRect.width / 2
+      const nextScrollLeft = container.scrollLeft + delta
+      container.scrollTo({
+        left: Math.max(0, nextScrollLeft),
+        behavior: 'smooth'
+      })
+    }
+
+    requestAnimationFrame(ensureVisible)
+  }, [activeTabId])
+
   if (tabs.length === 0) {
     return null
   }
@@ -72,8 +160,11 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
   return (
     <TabsBar>
       <HorizontalScrollContainer
+        allowVisibleOverflow={false}
+        contentRef={scrollContentRef}
+        onWheel={handleWheelScroll}
         dependencies={[tabsWithAssistant]}
-        gap="6px"
+        gap={itemGap}
         className="chat-tabs-scroll"
         classNames={{ content: 'chat-tabs-scroll-content' }}>
         <Sortable
@@ -81,13 +172,17 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
           itemKey="id"
           layout="list"
           horizontal
-          gap="6px"
+          gap={itemGap}
           onSortEnd={onSortEnd}
           className="chat-tabs-sortable"
           renderItem={(tab) => (
             <TabButton
               key={tab.id}
               active={tab.id === activeTabId}
+              compressed={isOverflowing}
+              ref={(node) => {
+                tabRefs.current[tab.id] = node
+              }}
               className={classNames('chat-tab', { 'is-session': tab.type === 'session' })}
               onClick={() => handleActivateTab(tab)}
               onAuxClick={(event) => {
@@ -97,7 +192,7 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
                   handleCloseTab(tab)
                 }
               }}>
-              <TabLabel>
+              <TabLabel compressed={isOverflowing}>
                 {tab.assistantEmoji && <span className="emoji">{tab.assistantEmoji}</span>}
                 <span className="title">{tab.title || tab.assistantName || t('chat.default.topic.name')}</span>
               </TabLabel>
@@ -125,7 +220,7 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
             </TabButton>
           )}
         />
-        <AddButton onClick={handleAddTab}>
+        <AddButton onClick={handleAddTab} className="chat-tabs-add">
           <Plus size={14} />
         </AddButton>
       </HorizontalScrollContainer>
@@ -147,12 +242,13 @@ const TabsBar = styled.div`
     padding-bottom: 0;
   }
   .chat-tabs-scroll-content {
-    overflow: visible !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
     padding-bottom: 0;
   }
 `
 
-const TabButton = styled.button<{ active?: boolean }>`
+const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
   display: flex;
   align-items: center;
   gap: 6px;
@@ -163,13 +259,17 @@ const TabButton = styled.button<{ active?: boolean }>`
   border-top-left-radius: var(--list-item-border-radius);
   border-top-right-radius: var(--list-item-border-radius);
   cursor: pointer;
-  padding: 6px 12px;
+  padding: ${(props) => (props.compressed ? '4px 8px' : '6px 12px')};
   height: 32px;
-  min-width: 90px;
+  min-width: ${(props) => (props.compressed ? '60px' : '90px')};
   transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
   position: relative;
   z-index: 1;
+  margin-left: 0;
+  & + & {
+    margin-left: ${(props) => (props.compressed ? '-16px' : '0')};
+  }
   .close-button {
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -191,18 +291,33 @@ const TabButton = styled.button<{ active?: boolean }>`
       z-index: 2;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     `}
+  ${(props) =>
+    props.compressed &&
+    css`
+      font-size: 12px;
+      gap: 3px;
+      padding-left: 10px;
+      padding-right: 6px;
+    `}
+  ${(props) =>
+    !props.active &&
+    css`
+      &:not(:first-child) {
+        box-shadow: -1px 0 0 ${props.compressed ? 'rgba(0, 0, 0, 0.2)' : 'var(--color-border)'};
+      }
+    `}
 `
 
-const TabLabel = styled.span`
+const TabLabel = styled.span<{ compressed?: boolean }>`
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: ${(props) => (props.compressed ? '3px' : '6px')};
+  font-size: ${(props) => (props.compressed ? '12px' : '13px')};
   .emoji {
     font-size: 15px;
   }
   .title {
-    max-width: 160px;
+    max-width: ${(props) => (props.compressed ? '96px' : '160px')};
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -223,11 +338,17 @@ const AddButton = styled.button`
   justify-content: center;
   width: 30px;
   height: 30px;
+  flex-shrink: 0;
   border: none;
   background: transparent;
   color: var(--color-text-2);
   border-radius: 8px;
   cursor: pointer;
+  position: sticky;
+  right: 0;
+  margin-left: 6px;
+  z-index: 3;
+  background-image: linear-gradient(90deg, transparent 0%, var(--color-background) 35%);
   &:hover {
     color: var(--color-text);
     background: var(--color-list-item);
