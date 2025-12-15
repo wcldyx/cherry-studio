@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from '@renderer/store'
 import {
   closeChatTabAction,
+  closeOtherChatTabsAction,
   openChatTabAction,
   reorderChatTabsAction,
   setActiveChatTabAction,
@@ -69,6 +70,13 @@ export const useChatTabs = () => {
     [dispatch]
   )
 
+  const closeOtherTabs = useCallback(
+    (tabId: string) => {
+      dispatch(closeOtherChatTabsAction(tabId))
+    },
+    [dispatch]
+  )
+
   const reorderTabs = useCallback(
     (nextTabs: ChatTab[]) => {
       dispatch(reorderChatTabsAction(nextTabs))
@@ -90,6 +98,7 @@ export const useChatTabs = () => {
     openSessionTab,
     setActiveTab,
     closeTab,
+    closeOtherTabs,
     reorderTabs,
     updateTabMeta
   }

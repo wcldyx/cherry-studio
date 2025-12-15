@@ -783,6 +783,10 @@
         "running": "生成中",
         "success": "已完成",
         "error": "发生错误"
+      },
+      "menu": {
+        "close": "关闭标签",
+        "closeOthers": "关闭其他标签"
       }
     },
     "navigation": {

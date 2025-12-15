@@ -783,6 +783,10 @@
         "running": "Generating",
         "success": "Completed",
         "error": "Failed"
+      },
+      "menu": {
+        "close": "Close tab",
+        "closeOthers": "Close other tabs"
       }
     },
     "navigation": {

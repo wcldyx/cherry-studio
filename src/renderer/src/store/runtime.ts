@@ -257,6 +257,30 @@ const runtimeSlice = createSlice({
         resetCompletedStatus(fallback || null)
       }
     },
+    closeOtherChatTabsAction: (state, action: PayloadAction<string>) => {
+      const targetId = action.payload
+      const targetTab = state.chat.tabs.find((item) => item.id === targetId)
+      if (!targetTab) return
+
+      state.chat.tabs = [targetTab]
+      state.chat.activeTabId = targetId
+      Object.entries(state.chat.messageTabMap).forEach(([messageId, mappedTabId]) => {
+        if (mappedTabId !== targetId) {
+          delete state.chat.messageTabMap[messageId]
+        }
+      })
+      if (targetTab.type === 'session') {
+        state.chat.activeTopicOrSession = 'session'
+        state.chat.activeAgentId = targetTab.assistantId
+        if (targetTab.sessionId) {
+          state.chat.activeSessionIdMap[targetTab.assistantId] = targetTab.sessionId
+        }
+      } else {
+        state.chat.activeTopicOrSession = 'topic'
+        state.chat.activeAgentId = null
+      }
+      resetCompletedStatus(targetTab)
+    },
     setActiveChatTabAction: (state, action: PayloadAction<string | null>) => {
       state.chat.activeTabId = action.payload
       if (!action.payload) return
@@ -373,6 +397,7 @@ export const {
   setWebSearchStatus,
   openChatTabAction,
   closeChatTabAction,
+  closeOtherChatTabsAction,
   setActiveChatTabAction,
   startChatTabTaskAction,
   completeChatTabTaskAction,

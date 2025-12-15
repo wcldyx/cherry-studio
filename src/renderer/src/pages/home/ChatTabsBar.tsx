@@ -6,6 +6,8 @@ import { useRuntime } from '@renderer/hooks/useRuntime'
 import { EVENT_NAMES, EventEmitter } from '@renderer/services/EventService'
 import type { ChatTab } from '@renderer/types/chat'
 import { classNames } from '@renderer/utils'
+import { Dropdown } from 'antd'
+import type { MenuProps } from 'antd'
 import { Plus, X } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -19,7 +21,7 @@ interface ChatTabsBarProps {
 
 const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
   const { assistants } = useAssistants()
-  const { tabs, activeTabId, closeTab, reorderTabs, setActiveTab } = useChatTabs()
+  const { tabs, activeTabId, closeTab, closeOtherTabs, reorderTabs, setActiveTab } = useChatTabs()
   const { chat } = useRuntime()
   const { t } = useTranslation()
   const scrollContentRef = useRef<HTMLDivElement>(null)
@@ -48,7 +50,6 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
       const assistant = assistants.find((item) => item.id === tab.assistantId)
       return {
         ...tab,
-        assistantEmoji: assistant?.emoji,
         assistantName: assistant?.name
       }
     })
@@ -153,6 +154,30 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
     requestAnimationFrame(ensureVisible)
   }, [activeTabId])
 
+  const buildContextMenuItems = useCallback(
+    (tab: ChatTab): MenuProps['items'] => [
+      {
+        key: 'close',
+        label: t('chat.tabs.menu.close', '关闭标签'),
+        onClick: (info) => {
+          info.domEvent.stopPropagation()
+          handleCloseTab(tab)
+        }
+      },
+      {
+        key: 'close-others',
+        label: t('chat.tabs.menu.closeOthers', '关闭其他标签'),
+        disabled: tabs.length <= 1,
+        onClick: (info) => {
+          info.domEvent.stopPropagation()
+          setActiveTab(tab.id)
+          closeOtherTabs(tab.id)
+        }
+      }
+    ],
+    [closeOtherTabs, handleCloseTab, setActiveTab, t, tabs.length]
+  )
+
   if (tabs.length === 0) {
     return null
   }
@@ -176,16 +201,17 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
           onSortEnd={onSortEnd}
           className="chat-tabs-sortable"
           renderItem={(tab) => (
-            <TabButton
-              key={tab.id}
-              active={tab.id === activeTabId}
-              compressed={isOverflowing}
-              ref={(node) => {
-                tabRefs.current[tab.id] = node
-              }}
-              className={classNames('chat-tab', { 'is-session': tab.type === 'session' })}
-              onClick={() => handleActivateTab(tab)}
-              onAuxClick={(event) => {
+            <Dropdown menu={{ items: buildContextMenuItems(tab) }} trigger={['contextMenu']}>
+              <TabButton
+                key={tab.id}
+                active={tab.id === activeTabId}
+                compressed={isOverflowing}
+                ref={(node) => {
+                  tabRefs.current[tab.id] = node
+                }}
+                className={classNames('chat-tab', { 'is-session': tab.type === 'session' })}
+                onClick={() => handleActivateTab(tab)}
+                onAuxClick={(event) => {
                 if (event.button === 1) {
                   event.preventDefault()
                   event.stopPropagation()
@@ -193,31 +219,31 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
                 }
               }}>
               <TabLabel compressed={isOverflowing}>
-                {tab.assistantEmoji && <span className="emoji">{tab.assistantEmoji}</span>}
                 <span className="title">{tab.title || tab.assistantName || t('chat.default.topic.name')}</span>
               </TabLabel>
-              {tab.status !== 'idle' && (
-                <StatusBadge
-                  status={tab.status}
-                  title={
-                    tab.status === 'running'
-                      ? t('chat.tabs.status.running')
-                      : tab.status === 'success'
-                        ? t('chat.tabs.status.success')
-                        : t('chat.tabs.status.error')
-                  }
-                />
-              )}
-              <CloseButton
-                className="close-button"
-                data-no-dnd
-                onClick={(event) => {
-                  event.stopPropagation()
-                  handleCloseTab(tab)
-                }}>
-                <X size={12} />
-              </CloseButton>
-            </TabButton>
+                {tab.status !== 'idle' && (
+                  <StatusBadge
+                    status={tab.status}
+                    title={
+                      tab.status === 'running'
+                        ? t('chat.tabs.status.running')
+                        : tab.status === 'success'
+                          ? t('chat.tabs.status.success')
+                          : t('chat.tabs.status.error')
+                    }
+                  />
+                )}
+                <CloseButton
+                  className="close-button"
+                  data-no-dnd
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    handleCloseTab(tab)
+                  }}>
+                  <X size={12} />
+                </CloseButton>
+              </TabButton>
+            </Dropdown>
           )}
         />
         <AddButton onClick={handleAddTab} className="chat-tabs-add">
@@ -251,7 +277,7 @@ const TabsBar = styled.div`
 const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   border: 1px solid transparent;
   border-bottom: none;
   background: transparent;
@@ -259,9 +285,9 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
   border-top-left-radius: var(--list-item-border-radius);
   border-top-right-radius: var(--list-item-border-radius);
   cursor: pointer;
-  padding: ${(props) => (props.compressed ? '4px 8px' : '6px 12px')};
+  padding: ${(props) => (props.compressed ? '4px 12px 4px 8px' : '6px 14px 6px 10px')};
   height: 32px;
-  min-width: ${(props) => (props.compressed ? '60px' : '90px')};
+  min-width: 0;
   transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
   position: relative;
@@ -272,7 +298,10 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
   }
   .close-button {
     opacity: 0;
-    transition: opacity 0.2s ease;
+    max-width: 0;
+    margin-left: 0;
+    margin-right: -6px;
+    overflow: hidden;
   }
   &:hover {
     background: var(--color-list-item);
@@ -280,6 +309,9 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
     border-color: var(--color-border);
     .close-button {
       opacity: 1;
+      max-width: 16px;
+      margin-left: 6px;
+      margin-right: -6px;
     }
   }
   ${(props) =>
@@ -295,9 +327,9 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
     props.compressed &&
     css`
       font-size: 12px;
-      gap: 3px;
-      padding-left: 10px;
-      padding-right: 6px;
+      gap: 2px;
+      padding-left: 8px;
+      padding-right: 12px;
     `}
   ${(props) =>
     !props.active &&
@@ -309,6 +341,8 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
 `
 
 const TabLabel = styled.span<{ compressed?: boolean }>`
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: ${(props) => (props.compressed ? '3px' : '6px')};
@@ -330,6 +364,8 @@ const CloseButton = styled.span`
   width: 14px;
   height: 14px;
   font-size: 14px;
+  pointer-events: auto;
+  transition: none;
 `
 
 const AddButton = styled.button`
