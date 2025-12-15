@@ -3,7 +3,6 @@ import { createSlice } from '@reduxjs/toolkit'
 import { AppLogo, UserAvatar } from '@renderer/config/env'
 import type { MinAppType, Topic, WebSearchStatus } from '@renderer/types'
 import type { ChatTab } from '@renderer/types/chat'
-import type { ChatTabStatus } from '@renderer/types/chat'
 import type { UpdateInfo } from 'builder-util-runtime'
 
 type ChatTabPayload = Omit<ChatTab, 'status' | 'pendingRequests' | 'hasPendingError'> &

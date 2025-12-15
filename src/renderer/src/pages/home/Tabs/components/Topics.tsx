@@ -534,13 +534,7 @@ export const Topics: React.FC<Props> = ({ assistant: _assistant, activeTopic, se
               {isFulfilled(topic.id) && !isActive && <FulfilledIndicator />}
               <TopicNameContainer>
                 {editingTopicId === topic.id && topicEdit.isEditing ? (
-                  <TopicEditInput
-                    ref={topicEdit.inputRef}
-                    value={topicEdit.editValue}
-                    onChange={topicEdit.handleInputChange}
-                    onKeyDown={topicEdit.handleKeyDown}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <TopicEditInput {...topicEdit.inputProps} onClick={(e) => e.stopPropagation()} />
                 ) : (
                   <TopicName
                     className={getTopicNameClassName()}

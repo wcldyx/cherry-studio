@@ -74,7 +74,7 @@ export type RequestOptions = Anthropic.RequestOptions | OpenAI.RequestOptions | 
  */
 
 type OpenAIParamsPurified = Omit<OpenAI.Chat.Completions.ChatCompletionCreateParams, 'reasoning_effort' | 'modalities'>
-type OpenAIReasoningEffort = NonNullable<OpenAI.ReasoningEffort> | 'auto'
+type OpenAIReasoningEffort = NonNullable<OpenAI.ReasoningEffort> | 'auto' | 'xhigh'
 export type ReasoningEffortOptionalParams = {
   thinking?: { type: 'disabled' | 'enabled' | 'auto'; budget_tokens?: number }
   reasoning?: { max_tokens?: number; exclude?: boolean; effort?: string; enabled?: boolean } | OpenAI.Reasoning
