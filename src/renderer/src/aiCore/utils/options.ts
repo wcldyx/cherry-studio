@@ -8,6 +8,7 @@ import { loggerService } from '@logger'
 import {
   getModelSupportedVerbosity,
   isOpenAIModel,
+  isOpenAIOpenWeightModel,
   isQwenMTModel,
   isSupportFlexServiceTierModel,
   isSupportVerbosityModel
