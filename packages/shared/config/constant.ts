@@ -1,4 +1,4 @@
-import { languages } from './languages'
+﻿import { languages } from './languages'
 
 export const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
 export const videoExts = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv']
@@ -58,8 +58,8 @@ export const customTextExts = new Map([
       '.dockerignore', // Docker ignore
       '.eslintignore',
       '.eslintrc', // ESLint
-      '.fishrc', // Fish shell配置
-      '.htaccess', // Apache配置
+      '.fishrc', // Fish shell 配置
+      '.htaccess', // Apache 配置
       '.npmignore',
       '.npmrc', // npm
       '.prettierignore',
@@ -84,10 +84,10 @@ export const customTextExts = new Map([
   [
     'data',
     [
-      '.atom', // Feed格式
+      '.atom', // Feed 格式
       '.ldif',
       '.map',
-      '.ndjson' // 换行分隔JSON
+      '.ndjson' // 换行分隔 JSON
     ]
   ],
   [
@@ -108,7 +108,7 @@ export const customTextExts = new Map([
   [
     'web',
     [
-      '.openapi', // API文档
+      '.openapi', // API 文档
       '.swagger'
     ]
   ],
@@ -133,7 +133,7 @@ export const customTextExts = new Map([
     'log',
     [
       '.log',
-      '.rpt' // 日志和报告 (移除了.out，因为通常是二进制可执行文件)
+      '.rpt' // 日志和报告
     ]
   ],
   [
@@ -162,7 +162,7 @@ export const textExts = [...new Set([...Array.from(customTextExts.values()).flat
 
 export const ZOOM_LEVELS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5]
 
-// 从 ZOOM_LEVELS 生成 Ant Design Select 所需的 options 结构
+// 由 ZOOM_LEVELS 生成 Ant Design Select 所需的 options 结构
 export const ZOOM_OPTIONS = ZOOM_LEVELS.map((level) => ({
   value: level,
   label: `${Math.round(level * 100)}%`
@@ -198,17 +198,17 @@ export const GB = 1024 * MB
 export const defaultLanguage = 'en-US'
 
 export enum FeedUrl {
-  PRODUCTION = 'https://releases.cherry-ai.com',
-  GITHUB_LATEST = 'https://github.com/CherryHQ/cherry-studio/releases/latest/download'
+  PRODUCTION = 'https://github.com/wcldyx/cherry-studio/releases/latest/download',
+  GITHUB_LATEST = 'https://github.com/wcldyx/cherry-studio/releases/latest/download'
 }
 
 export enum UpdateConfigUrl {
-  GITHUB = 'https://raw.githubusercontent.com/CherryHQ/cherry-studio/refs/heads/x-files/app-upgrade-config/app-upgrade-config.json',
-  GITCODE = 'https://raw.gitcode.com/CherryHQ/cherry-studio/raw/x-files%2Fapp-upgrade-config/app-upgrade-config.json'
+  GITHUB = 'https://raw.githubusercontent.com/wcldyx/cherry-studio/refs/heads/x-files/app-upgrade-config/app-upgrade-config.json',
+  GITCODE = 'https://raw.githubusercontent.com/wcldyx/cherry-studio/refs/heads/x-files/app-upgrade-config/app-upgrade-config.json'
 }
 
 export enum UpgradeChannel {
-  LATEST = 'latest', // 最新稳定版本
+  LATEST = 'latest', // 最新稳定版
   RC = 'rc', // 公测版本
   BETA = 'beta' // 预览版本
 }
@@ -488,3 +488,9 @@ export const MACOS_TERMINALS_WITH_COMMANDS: TerminalConfigWithCommand[] = [
 
 // resources/scripts should be maintained manually
 export const HOME_CHERRY_DIR = '.cherrystudio'
+
+
+
+
+
+
