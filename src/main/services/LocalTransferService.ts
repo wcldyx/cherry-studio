@@ -166,6 +166,7 @@ class LocalTransferService {
       (value): value is string => typeof value === 'string' && value.length > 0
     )
     const addresses = Array.from(new Set(addressCandidates))
+    const protocol = service.protocol === 'udp' ? 'udp' : service.protocol === 'tcp' ? 'tcp' : undefined
     const txtEntries = Object.entries(service.txt || {})
     const txt =
       txtEntries.length > 0
@@ -181,7 +182,7 @@ class LocalTransferService {
       fqdn: service.fqdn,
       port: service.port,
       type: service.type,
-      protocol: service.protocol,
+      protocol,
       addresses,
       txt,
       updatedAt: Date.now()

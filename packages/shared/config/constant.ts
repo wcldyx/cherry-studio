@@ -384,6 +384,13 @@ export const WINDOWS_TERMINALS_WITH_COMMANDS: TerminalConfigWithCommand[] = [
   }
 ]
 
+export type GitBashPathSource = 'auto' | 'manual' | null
+
+export interface GitBashPathInfo {
+  path: string | null
+  source: GitBashPathSource
+}
+
 // Helper function to escape strings for AppleScript
 const escapeForAppleScript = (str: string): string => {
   // In AppleScript strings, backslashes and double quotes need to be escaped
@@ -488,7 +495,6 @@ export const MACOS_TERMINALS_WITH_COMMANDS: TerminalConfigWithCommand[] = [
 
 // resources/scripts should be maintained manually
 export const HOME_CHERRY_DIR = '.cherrystudio'
-
 
 
 

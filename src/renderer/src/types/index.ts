@@ -96,7 +96,11 @@ const ThinkModelTypes = [
   'grok4_fast',
   'gemini',
   'gemini_pro',
+  'gemini2_flash',
+  'gemini2_pro',
   'gemini3',
+  'gemini3_flash',
+  'gemini3_pro',
   'qwen',
   'qwen_thinking',
   'doubao',
@@ -105,10 +109,11 @@ const ThinkModelTypes = [
   'hunyuan',
   'zhipu',
   'perplexity',
-  'deepseek_hybrid'
+  'deepseek_hybrid',
+  'mimo'
 ] as const
 
-export type ReasoningEffortOption = NonNullable<OpenAI.ReasoningEffort> | 'auto' | 'xhigh'
+export type ReasoningEffortOption = NonNullable<OpenAI.ReasoningEffort> | 'auto' | 'xhigh' | 'default'
 export type ThinkingOption = ReasoningEffortOption
 export type ThinkingModelType = (typeof ThinkModelTypes)[number]
 export type ThinkingOptionConfig = Record<ThinkingModelType, ThinkingOption[]>
@@ -120,6 +125,7 @@ export function isThinkModelType(type: string): type is ThinkingModelType {
 }
 
 export const EFFORT_RATIO: EffortRatio = {
+  default: 1,
   none: 0.01,
   minimal: 0.05,
   low: 0.05,
@@ -601,6 +607,7 @@ export const WebSearchProviderIds = {
   tavily: 'tavily',
   searxng: 'searxng',
   exa: 'exa',
+  'exa-mcp': 'exa-mcp',
   bocha: 'bocha',
   'local-google': 'local-google',
   'local-bing': 'local-bing',
@@ -749,7 +756,9 @@ export const BuiltinMCPServerNames = {
   filesystem: '@cherry/filesystem',
   difyKnowledge: '@cherry/dify-knowledge',
   python: '@cherry/python',
-  didiMCP: '@cherry/didi-mcp'
+  didiMCP: '@cherry/didi-mcp',
+  browser: '@cherry/browser',
+  nowledgeMem: '@nowledge/mem'
 } as const
 
 export type BuiltinMCPServerName = (typeof BuiltinMCPServerNames)[keyof typeof BuiltinMCPServerNames]
@@ -910,6 +919,18 @@ export * from './tool'
 // Memory Service Types
 // ========================================================================
 export interface MemoryConfig {
+  /**
+   * @deprecated 兼容旧字段，请使用 embedderModel
+   */
+  embeddingModel?: Model
+  /**
+   * @deprecated 兼容旧字段，请使用 embedderDimensions
+   */
+  embeddingDimensions?: number
+  /**
+   * @deprecated 兼容旧字段，请使用 embedderApiClient
+   */
+  embeddingApiClient?: ApiClient
   /**
    * @deprecated use embedderApiClient instead
    */

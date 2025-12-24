@@ -35,7 +35,7 @@ import {
 } from '@renderer/config/models'
 import { getStoreSetting } from '@renderer/hooks/useSettings'
 import { getAssistantSettings, getProviderByModel } from '@renderer/services/AssistantService'
-import type { Assistant, AssistantSettingCustomParameters, Model } from '@renderer/types'
+import type { Assistant, AssistantSettingCustomParameters, Model, ReasoningEffortOption } from '@renderer/types'
 import { EFFORT_RATIO, isSystemProvider, SystemProviderIds } from '@renderer/types'
 import type { OpenAIReasoningSummary } from '@renderer/types/aiCoreTypes'
 import type { ReasoningEffortOptionalParams } from '@renderer/types/sdk'
@@ -65,7 +65,7 @@ export function getReasoningEffort(assistant: Assistant, model: Model): Reasonin
   // reasoningEffort is not set, no extra reasoning setting
   // Generally, for every model which supports reasoning control, the reasoning effort won't be undefined.
   // It's for some reasoning models that don't support reasoning control, such as deepseek reasoner.
-  if (!reasoningEffort) {
+  if (!reasoningEffort || reasoningEffort === 'default') {
     return {}
   }
 
@@ -331,15 +331,16 @@ export function getReasoningEffort(assistant: Assistant, model: Model): Reasonin
   if (isSupportedReasoningEffortModel(model)) {
     // 检查模型是否支持所选选项
     const modelType = getThinkModelType(model)
-    const supportedOptions = MODEL_SUPPORTED_REASONING_EFFORT[modelType]
-    if (supportedOptions.includes(reasoningEffort)) {
+    const supportedOptions = MODEL_SUPPORTED_REASONING_EFFORT[modelType] as ReadonlyArray<ReasoningEffortOption>
+    const effort = reasoningEffort as Exclude<ReasoningEffortOption, 'default'>
+    if (supportedOptions.includes(effort)) {
       return {
-        reasoningEffort
+        reasoningEffort: effort
       }
     } else {
       // 如果不支持，fallback到第一个支持的值
       return {
-        reasoningEffort: supportedOptions[0]
+        reasoningEffort: supportedOptions[0] as Exclude<ReasoningEffortOption, 'default'>
       }
     }
   }
@@ -429,7 +430,7 @@ export function getOpenAIReasoningParams(
 
   let reasoningEffort = assistant?.settings?.reasoning_effort
 
-  if (!reasoningEffort) {
+  if (!reasoningEffort || reasoningEffort === 'default') {
     return {}
   }
 
@@ -636,6 +637,8 @@ export function getXAIReasoningParams(assistant: Assistant, model: Model): Pick<
       return { reasoningEffort }
     case 'xhigh':
       return { reasoningEffort: 'high' }
+    default:
+      return {}
   }
 }
 
