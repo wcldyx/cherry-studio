@@ -77,8 +77,9 @@ const ChatTabsBar: FC<ChatTabsBarProps> = ({ onCreateSession, onCloseTab }) => {
 
     const measureOverflow = () => {
       const overflowWidth = content.scrollWidth - content.clientWidth
-      const nextOverflow =
-        overflowWidth > 12 ? true : overflowWidth < 4 ? false : overflowStateRef.current
+      const nextOverflow = overflowStateRef.current
+        ? overflowWidth > -48
+        : overflowWidth > 12
       if (overflowStateRef.current !== nextOverflow) {
         overflowStateRef.current = nextOverflow
         setIsOverflowing(nextOverflow)
@@ -298,10 +299,11 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
   }
   .close-button {
     opacity: 0;
-    max-width: 0;
-    margin-left: 0;
+    width: 16px;
+    margin-left: 6px;
     margin-right: -6px;
-    overflow: hidden;
+    pointer-events: none;
+    transform: scale(0.9);
   }
   &:hover {
     background: var(--color-list-item);
@@ -309,9 +311,8 @@ const TabButton = styled.button<{ active?: boolean; compressed?: boolean }>`
     border-color: var(--color-border);
     .close-button {
       opacity: 1;
-      max-width: 16px;
-      margin-left: 6px;
-      margin-right: -6px;
+      pointer-events: auto;
+      transform: scale(1);
     }
   }
   ${(props) =>
@@ -365,7 +366,7 @@ const CloseButton = styled.span`
   height: 14px;
   font-size: 14px;
   pointer-events: auto;
-  transition: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 `
 
 const AddButton = styled.button`
