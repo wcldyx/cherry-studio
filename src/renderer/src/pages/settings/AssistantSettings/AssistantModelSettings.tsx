@@ -1,11 +1,11 @@
 import { QuestionCircleOutlined } from '@ant-design/icons'
 import ModelAvatar from '@renderer/components/Avatar/ModelAvatar'
+import CustomParametersList from '@renderer/components/CustomParametersList'
 import EditableNumber from '@renderer/components/EditableNumber'
 import { DeleteIcon, ResetIcon } from '@renderer/components/Icons'
 import { HStack } from '@renderer/components/Layout'
 import { SelectModelPopup } from '@renderer/components/Popups/SelectModelPopup'
 import Selector from '@renderer/components/Selector'
-import CustomParametersList from '@renderer/components/CustomParametersList'
 import { DEFAULT_CONTEXTCOUNT, DEFAULT_TEMPERATURE, MAX_CONTEXT_COUNT } from '@renderer/config/constant'
 import { isEmbeddingModel, isRerankModel } from '@renderer/config/models'
 import { useTimer } from '@renderer/hooks/useTimer'
@@ -272,16 +272,24 @@ const AssistantModelSettings: FC<Props> = ({ assistant, updateAssistant, updateA
       </Row>
       <Row align="middle" gutter={24}>
         <Col span={24}>
-          <Slider
-            min={0}
-            max={MAX_CONTEXT_COUNT}
-            onChange={setContextCount}
-            onChangeComplete={onContextCountChange}
-            value={typeof contextCount === 'number' ? contextCount : 0}
-            marks={{ 0: '0', 25: '25', 50: '50', 75: '75', 100: t('chat.settings.max') }}
-            step={1}
-            tooltip={{ formatter: formatSliderTooltip, open: false }}
-          />
+          <ContextSliderWrapper>
+            <Slider
+              min={0}
+              max={MAX_CONTEXT_COUNT}
+              onChange={setContextCount}
+              onChangeComplete={onContextCountChange}
+              value={typeof contextCount === 'number' ? contextCount : 0}
+              marks={{
+                0: '0',
+                25: '25',
+                50: '50',
+                75: '75',
+                100: <span style={{ position: 'absolute', right: -2 }}>{t('chat.settings.max')}</span>
+              }}
+              step={1}
+              tooltip={{ formatter: formatSliderTooltip, open: false }}
+            />
+          </ContextSliderWrapper>
         </Col>
       </Row>
       <Divider style={{ margin: '10px 0' }} />
@@ -414,6 +422,10 @@ const ModelName = styled.span`
   text-overflow: ellipsis;
   white-space: nowrap;
   display: inline-block;
+`
+
+const ContextSliderWrapper = styled.div`
+  padding-bottom: 5px;
 `
 
 export default AssistantModelSettings

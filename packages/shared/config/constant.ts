@@ -233,7 +233,8 @@ export enum codeTools {
   geminiCli = 'gemini-cli',
   openaiCodex = 'openai-codex',
   iFlowCli = 'iflow-cli',
-  githubCopilotCli = 'github-copilot-cli'
+  githubCopilotCli = 'github-copilot-cli',
+  kimiCli = 'kimi-cli'
 }
 
 export enum terminalApps {
@@ -495,8 +496,3 @@ export const MACOS_TERMINALS_WITH_COMMANDS: TerminalConfigWithCommand[] = [
 
 // resources/scripts should be maintained manually
 export const HOME_CHERRY_DIR = '.cherrystudio'
-
-
-
-
-
